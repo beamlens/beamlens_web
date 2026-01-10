@@ -5,6 +5,8 @@ defmodule BeamlensWeb.EventComponents do
 
   use Phoenix.Component
 
+  import BeamlensWeb.Icons
+
   @doc """
   Renders a list of events with optional filtering.
   """
@@ -15,17 +17,17 @@ defmodule BeamlensWeb.EventComponents do
 
   def event_list(assigns) do
     ~H"""
-    <div class="event-log">
+    <div class="bg-base-200 border border-base-300 rounded-lg max-h-[600px] overflow-y-auto">
       <%= if Enum.empty?(@events) do %>
-        <div class="empty-state">
-          <div class="empty-state-icon">📋</div>
+        <div class="text-center py-12 px-4 text-base-content/50">
+          <.icon name="hero-inbox" class="w-12 h-12 mx-auto mb-3 opacity-50" />
           <p>No events recorded yet</p>
-          <p style="font-size: 0.75rem; margin-top: 0.5rem;">
+          <p class="text-xs mt-2">
             Events will appear here as watchers and coordinator run
           </p>
         </div>
       <% else %>
-        <div class="event-list">
+        <div class="flex flex-col">
           <%= for event <- @events do %>
             <.event_row event={event} expanded={@selected_event_id == event.id} />
           <% end %>
@@ -43,29 +45,39 @@ defmodule BeamlensWeb.EventComponents do
 
   def event_row(assigns) do
     ~H"""
-    <div class={"event-row-container #{if @expanded, do: "expanded", else: ""}"}>
+    <div class={[
+      "border-b border-base-300 last:border-b-0",
+      @expanded && "bg-base-100"
+    ]}>
       <div
-        class={"event-row #{if @expanded, do: "selected", else: ""}"}
+        class={[
+          "flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer transition-colors hover:bg-base-300/50",
+          @expanded && "bg-base-300/50"
+        ]}
         phx-click="select_event"
         phx-value-id={@event.id}
       >
-        <span class="event-expand-icon">
-          <%= if @expanded, do: "▼", else: "▶" %>
+        <span class="text-base-content/50 shrink-0">
+          <%= if @expanded do %>
+            <.icon name="hero-chevron-down" class="w-4 h-4" />
+          <% else %>
+            <.icon name="hero-chevron-right" class="w-4 h-4" />
+          <% end %>
         </span>
-        <span class="event-timestamp timestamp">
+        <span class="font-mono text-xs text-base-content/50 shrink-0">
           <%= format_timestamp(@event.timestamp) %>
         </span>
-        <span class={"event-type-badge badge-#{event_type_class(@event.event_type)}"}>
+        <span class={["badge badge-sm font-mono min-w-[5rem] text-center", event_badge_class(@event.event_type)]}>
           <%= format_event_type(@event.event_type) %>
         </span>
-        <span class="event-source">
+        <span class="text-base-content/70 font-medium shrink-0 min-w-[6rem]">
           <%= format_source(@event.source) %>
         </span>
-        <span class="event-details">
+        <span class="text-base-content flex-1 truncate">
           <%= format_event_details(@event) %>
         </span>
         <%= if @event.trace_id do %>
-          <span class="event-trace-id" title={"Trace: #{@event.trace_id}"}>
+          <span class="font-mono text-xs text-base-content/50 shrink-0" title={"Trace: #{@event.trace_id}"}>
             <%= String.slice(@event.trace_id || "", 0..7) %>
           </span>
         <% end %>
@@ -84,38 +96,42 @@ defmodule BeamlensWeb.EventComponents do
 
   def event_detail(assigns) do
     ~H"""
-    <div class="event-detail">
-      <div class="event-detail-grid">
-        <div class="event-detail-section">
-          <h4>Event Info</h4>
-          <dl>
-            <dt>ID</dt>
-            <dd><code><%= @event.id %></code></dd>
-            <dt>Timestamp</dt>
-            <dd><%= format_full_timestamp(@event.timestamp) %></dd>
-            <dt>Event Name</dt>
-            <dd><code><%= inspect(@event.event_name) %></code></dd>
-            <dt>Type</dt>
-            <dd><%= format_event_type(@event.event_type) %></dd>
-            <dt>Source</dt>
-            <dd><%= format_source(@event.source) %></dd>
+    <div class="px-4 py-4 pl-10 bg-base-100 border-t border-base-300">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <h4 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider mb-3 pb-2 border-b border-base-300">
+            Event Info
+          </h4>
+          <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+            <dt class="text-base-content/50 font-medium">ID</dt>
+            <dd><code class="font-mono text-xs bg-base-200 px-1.5 py-0.5 rounded text-secondary"><%= @event.id %></code></dd>
+            <dt class="text-base-content/50 font-medium">Timestamp</dt>
+            <dd class="text-base-content"><%= format_full_timestamp(@event.timestamp) %></dd>
+            <dt class="text-base-content/50 font-medium">Event Name</dt>
+            <dd><code class="font-mono text-xs bg-base-200 px-1.5 py-0.5 rounded text-secondary"><%= inspect(@event.event_name) %></code></dd>
+            <dt class="text-base-content/50 font-medium">Type</dt>
+            <dd class="text-base-content"><%= format_event_type(@event.event_type) %></dd>
+            <dt class="text-base-content/50 font-medium">Source</dt>
+            <dd class="text-base-content"><%= format_source(@event.source) %></dd>
             <%= if @event.trace_id do %>
-              <dt>Trace ID</dt>
-              <dd><code><%= @event.trace_id %></code></dd>
+              <dt class="text-base-content/50 font-medium">Trace ID</dt>
+              <dd><code class="font-mono text-xs bg-base-200 px-1.5 py-0.5 rounded text-secondary"><%= @event.trace_id %></code></dd>
             <% end %>
           </dl>
         </div>
-        <div class="event-detail-section">
-          <h4>Metadata</h4>
+        <div>
+          <h4 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider mb-3 pb-2 border-b border-base-300">
+            Metadata
+          </h4>
           <%= if @event.metadata && map_size(@event.metadata) > 0 do %>
-            <dl>
+            <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
               <%= for {key, value} <- @event.metadata do %>
-                <dt><%= key %></dt>
-                <dd><%= format_metadata_value(value) %></dd>
+                <dt class="text-base-content/50 font-medium"><%= key %></dt>
+                <dd class="text-base-content break-words"><%= format_metadata_value(value) %></dd>
               <% end %>
             </dl>
           <% else %>
-            <p class="text-muted">No metadata</p>
+            <p class="text-base-content/50 italic text-sm">No metadata</p>
           <% end %>
         </div>
       </div>
@@ -133,11 +149,11 @@ defmodule BeamlensWeb.EventComponents do
 
   def event_filters(assigns) do
     ~H"""
-    <div class="event-filters">
-      <form phx-change="filter_events" class="filter-form">
-        <div class="filter-group">
-          <label for="event-type-filter">Type:</label>
-          <select id="event-type-filter" name="type">
+    <div class="flex items-center justify-between gap-4 mb-4">
+      <form phx-change="filter_events" class="flex items-center gap-4 flex-wrap">
+        <div class="flex items-center gap-2">
+          <label for="event-type-filter" class="text-sm text-base-content/70">Type:</label>
+          <select id="event-type-filter" name="type" class="select select-sm select-bordered">
             <option value="" selected={@current_filter == nil}>All Events</option>
             <option value="iteration_start" selected={@current_filter == :iteration_start}>Iterations</option>
             <option value="state_change" selected={@current_filter == :state_change}>State Changes</option>
@@ -152,9 +168,9 @@ defmodule BeamlensWeb.EventComponents do
           </select>
         </div>
 
-        <div class="filter-group">
-          <label for="event-source-filter">Source:</label>
-          <select id="event-source-filter" name="source">
+        <div class="flex items-center gap-2">
+          <label for="event-source-filter" class="text-sm text-base-content/70">Source:</label>
+          <select id="event-source-filter" name="source" class="select select-sm select-bordered">
             <option value="" selected={@current_source == nil}>All Sources</option>
             <option value="coordinator" selected={@current_source == :coordinator}>Coordinator</option>
             <%= for source <- @sources do %>
@@ -165,7 +181,7 @@ defmodule BeamlensWeb.EventComponents do
           </select>
         </div>
 
-        <button type="button" phx-click="clear_event_filters" class="filter-clear-btn">
+        <button type="button" phx-click="clear_event_filters" class="btn btn-ghost btn-sm">
           Clear
         </button>
       </form>
@@ -173,12 +189,15 @@ defmodule BeamlensWeb.EventComponents do
       <button
         type="button"
         phx-click="toggle_events_pause"
-        class={"pause-btn #{if @paused, do: "paused", else: ""}"}
+        class={[
+          "btn btn-sm gap-1",
+          if(@paused, do: "btn-primary", else: "btn-ghost")
+        ]}
       >
         <%= if @paused do %>
-          <span class="pause-icon">▶</span> Resume
+          <.icon name="hero-play" class="w-4 h-4" /> Resume
         <% else %>
-          <span class="pause-icon">⏸</span> Pause
+          <.icon name="hero-pause" class="w-4 h-4" /> Pause
         <% end %>
       </button>
     </div>
@@ -212,22 +231,26 @@ defmodule BeamlensWeb.EventComponents do
   defp format_event_type(:done), do: "DONE"
   defp format_event_type(type), do: type |> to_string() |> String.upcase()
 
-  defp event_type_class(:iteration_start), do: "iteration"
-  defp event_type_class(:state_change), do: "state"
-  defp event_type_class(:alert_fired), do: "alert"
-  defp event_type_class(:take_snapshot), do: "snapshot"
-  defp event_type_class(:wait), do: "wait"
-  defp event_type_class(:think), do: "think"
-  defp event_type_class(:llm_error), do: "error"
-  defp event_type_class(:alert_received), do: "received"
-  defp event_type_class(:insight_produced), do: "insight"
-  defp event_type_class(:done), do: "done"
-  defp event_type_class(_), do: "default"
+  defp event_badge_class(:iteration_start), do: "badge-primary"
+  defp event_badge_class(:state_change), do: "badge-info"
+  defp event_badge_class(:alert_fired), do: "badge-error"
+  defp event_badge_class(:take_snapshot), do: "badge-secondary"
+  defp event_badge_class(:wait), do: "badge-neutral"
+  defp event_badge_class(:think), do: "badge-accent"
+  defp event_badge_class(:llm_error), do: "badge-error"
+  defp event_badge_class(:alert_received), do: "badge-warning"
+  defp event_badge_class(:insight_produced), do: "badge-success"
+  defp event_badge_class(:done), do: "badge-success"
+  defp event_badge_class(_), do: "badge-neutral"
 
   defp format_source(:coordinator), do: "coordinator"
   defp format_source(:unknown), do: "unknown"
   defp format_source(source) when is_atom(source), do: Atom.to_string(source)
   defp format_source(source), do: to_string(source)
+
+  defp format_event_details(%{event_type: :iteration_start, source: :coordinator, metadata: meta}) do
+    "Analysis iteration ##{meta[:iteration]} (#{meta[:alert_count]} alerts)"
+  end
 
   defp format_event_details(%{event_type: :iteration_start, metadata: meta}) do
     "Iteration ##{meta[:iteration] || "?"} started (#{meta[:watcher_state] || "?"})"
@@ -260,10 +283,6 @@ defmodule BeamlensWeb.EventComponents do
 
   defp format_event_details(%{event_type: :alert_received, metadata: meta}) do
     "Alert #{String.slice(meta[:alert_id] || "", 0..7)} from #{meta[:watcher]}"
-  end
-
-  defp format_event_details(%{event_type: :iteration_start, source: :coordinator, metadata: meta}) do
-    "Analysis iteration ##{meta[:iteration]} (#{meta[:alert_count]} alerts)"
   end
 
   defp format_event_details(%{event_type: :insight_produced, metadata: meta}) do

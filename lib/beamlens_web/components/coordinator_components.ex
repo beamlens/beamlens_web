@@ -13,24 +13,30 @@ defmodule BeamlensWeb.CoordinatorComponents do
 
   def coordinator_status(assigns) do
     ~H"""
-    <div class="coordinator-status">
-      <div class="stat-card">
-        <div class="stat-label">Status</div>
-        <div class="stat-value" style={"color: #{if @status.running, do: "var(--success)", else: "var(--text-muted)"}"}>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+        <div class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Status</div>
+        <div class={[
+          "text-2xl font-semibold",
+          if(@status.running, do: "text-success", else: "text-base-content/50")
+        ]}>
           <%= if @status.running, do: "Running", else: "Idle" %>
         </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Iteration</div>
-        <div class="stat-value"><%= @status.iteration %></div>
+      <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+        <div class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Iteration</div>
+        <div class="text-2xl font-semibold text-base-content"><%= @status.iteration %></div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Total Alerts</div>
-        <div class="stat-value"><%= @status.alert_count %></div>
+      <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+        <div class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Total Alerts</div>
+        <div class="text-2xl font-semibold text-base-content"><%= @status.alert_count %></div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Unread Alerts</div>
-        <div class="stat-value" style={"color: #{if @status.unread_count > 0, do: "var(--brand-orange)", else: "inherit"}"}>
+      <div class="bg-base-200 border border-base-300 rounded-lg p-4">
+        <div class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Unread Alerts</div>
+        <div class={[
+          "text-2xl font-semibold",
+          if(@status.unread_count > 0, do: "text-primary", else: "text-base-content")
+        ]}>
           <%= @status.unread_count %>
         </div>
       </div>
@@ -45,21 +51,21 @@ defmodule BeamlensWeb.CoordinatorComponents do
 
   def insight_card(assigns) do
     ~H"""
-    <.card>
-      <div class="card-header">
+    <.card class="mb-4">
+      <div class="p-4 border-b border-base-300 flex items-center gap-3">
         <.badge variant={@insight.correlation_type}><%= @insight.correlation_type %></.badge>
         <.badge variant={@insight.confidence}>Confidence: <%= @insight.confidence %></.badge>
       </div>
-      <div class="card-body">
-        <p class="insight-summary"><%= @insight.summary %></p>
+      <div class="p-4">
+        <p class="text-base mb-3"><%= @insight.summary %></p>
         <%= if @insight.root_cause_hypothesis do %>
-          <div class="insight-hypothesis">
+          <div class="bg-base-100 p-3 rounded text-sm text-base-content/70 mb-3">
             <strong>Root Cause Hypothesis:</strong> <%= @insight.root_cause_hypothesis %>
           </div>
         <% end %>
-        <div class="insight-meta">
+        <div class="flex flex-wrap gap-3 text-sm text-base-content/70">
           <span>Correlated <%= length(@insight.alert_ids) %> alert(s)</span>
-          <span class="timestamp"><%= format_datetime(@insight.created_at) %></span>
+          <span class="font-mono text-xs"><%= format_datetime(@insight.created_at) %></span>
         </div>
       </div>
     </.card>

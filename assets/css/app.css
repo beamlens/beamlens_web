@@ -1,0 +1,137 @@
+@import "tailwindcss";
+@source "../../lib/**/*.ex";
+@source "../../lib/**/*.heex";
+@plugin "daisyui";
+
+/* Warm Ember Dark Theme */
+[data-theme="warm-ember-dark"] {
+  --color-base-100: #0f1115;
+  --color-base-200: #1a1d23;
+  --color-base-300: #252930;
+  --color-base-content: #f3f4f6;
+
+  --color-primary: #FD4F00;
+  --color-primary-content: #0f1115;
+
+  --color-secondary: #14B8A6;
+  --color-secondary-content: #0f1115;
+
+  --color-accent: #f59e0b;
+  --color-accent-content: #0f1115;
+
+  --color-neutral: #2d3139;
+  --color-neutral-content: #f3f4f6;
+
+  --color-info: #06b6d4;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+
+  --rounded-box: 0.5rem;
+  --rounded-btn: 0.375rem;
+  --rounded-badge: 0.25rem;
+}
+
+/* Warm Ember Light Theme */
+[data-theme="warm-ember-light"] {
+  --color-base-100: #fafaf9;
+  --color-base-200: #f5f5f4;
+  --color-base-300: #e7e5e4;
+  --color-base-content: #1c1917;
+
+  --color-primary: #d94400;
+  --color-primary-content: #fefefe;
+
+  --color-secondary: #0d9488;
+  --color-secondary-content: #fefefe;
+
+  --color-accent: #d97706;
+  --color-accent-content: #fefefe;
+
+  --color-neutral: #d6d3d1;
+  --color-neutral-content: #1c1917;
+
+  --color-info: #0891b2;
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
+
+  --rounded-box: 0.5rem;
+  --rounded-btn: 0.375rem;
+  --rounded-badge: 0.25rem;
+}
+
+/* Theme toggle icon visibility - show icon matching selected mode */
+/* Default: hide all icons */
+.theme-icon-light,
+.theme-icon-dark,
+.theme-icon-system {
+  display: none;
+}
+
+/* Show sun icon when light mode is explicitly selected */
+[data-theme-mode="light"] .theme-icon-light {
+  display: block;
+}
+
+/* Show moon icon when dark mode is explicitly selected */
+[data-theme-mode="dark"] .theme-icon-dark {
+  display: block;
+}
+
+/* Show computer icon when system mode is selected */
+[data-theme-mode="system"] .theme-icon-system {
+  display: block;
+}
+
+/* Dashboard-specific utilities */
+@layer components {
+  /* Status indicator dots */
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  .status-dot-healthy,
+  .status-dot-running {
+    @apply bg-success;
+  }
+
+  .status-dot-critical {
+    @apply bg-error;
+  }
+
+  .status-dot-warning {
+    @apply bg-warning;
+  }
+
+  .status-dot-stopped,
+  .status-dot-idle {
+    @apply bg-neutral;
+  }
+
+  /* Event type badges */
+  .event-badge {
+    @apply badge badge-sm font-mono;
+  }
+
+  .event-badge-iteration_start { @apply badge-primary; }
+  .event-badge-state_change { @apply badge-info; }
+  .event-badge-alert_fired { @apply badge-error; }
+  .event-badge-alert_received { @apply badge-warning; }
+  .event-badge-insight_produced { @apply badge-success; }
+  .event-badge-take_snapshot { @apply badge-secondary; }
+  .event-badge-wait { @apply badge-neutral; }
+  .event-badge-think { @apply badge-accent; }
+  .event-badge-llm_error { @apply badge-error; }
+  .event-badge-done { @apply badge-success; }
+
+  /* State badges */
+  .state-badge {
+    @apply badge badge-sm;
+  }
+
+  .state-badge-healthy { @apply badge-success; }
+  .state-badge-critical { @apply badge-error; }
+  .state-badge-warning { @apply badge-warning; }
+  .state-badge-idle { @apply badge-neutral; }
+}

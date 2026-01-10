@@ -12,9 +12,9 @@ defmodule BeamlensWeb.DashboardLive do
   use BeamlensWeb, :live_view
 
   import BeamlensWeb.CoreComponents
-  import BeamlensWeb.AlertComponents
   import BeamlensWeb.CoordinatorComponents
   import BeamlensWeb.EventComponents
+  import BeamlensWeb.Icons
   import BeamlensWeb.SidebarComponents
 
   @refresh_interval 5_000
@@ -95,6 +95,27 @@ defmodule BeamlensWeb.DashboardLive do
     {:noreply, socket}
   end
 
+  def handle_event("export_data", _params, socket) do
+    node = socket.assigns.selected_node
+
+    export_data = %{
+      exported_at: DateTime.utc_now(),
+      node: node,
+      events: fetch_events(node),
+      alerts: fetch_alerts(node),
+      insights: fetch_insights(node),
+      metadata: %{
+        selected_source: socket.assigns.selected_source,
+        event_type_filter: socket.assigns.event_type_filter
+      }
+    }
+
+    json = Jason.encode!(export_data, pretty: true)
+    filename = "beamlens-export-#{format_timestamp_for_file()}.json"
+
+    {:noreply, push_event(socket, "download", %{content: json, filename: filename})}
+  end
+
   @impl true
   def handle_info(:refresh, socket) do
     schedule_refresh()
@@ -127,18 +148,23 @@ defmodule BeamlensWeb.DashboardLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="dashboard-layout">
-      <header class="dashboard-header">
-        <h1>
-          <span class="logo">◉</span>
+    <div class="grid grid-cols-[220px_1fr] grid-rows-[auto_1fr] h-screen overflow-hidden">
+      <header class="col-span-2 bg-base-200 border-b border-base-300 px-6 py-4 flex items-center justify-between">
+        <h1 class="text-xl font-semibold flex items-center gap-2">
+          <.icon name="hero-viewfinder-circle" class="w-6 h-6 text-primary" />
           BeamLens Dashboard
         </h1>
-        <div class="header-status">
+        <div class="flex items-center gap-4 text-sm text-base-content/70">
           <.node_selector
             selected_node={@selected_node}
             available_nodes={@available_nodes}
           />
           <span>Last updated: <%= format_time(@last_updated) %></span>
+          <.theme_toggle />
+          <button type="button" phx-click="export_data" class="btn btn-ghost btn-sm gap-1">
+            <.icon name="hero-arrow-down-tray" class="w-4 h-4" />
+            Export
+          </button>
         </div>
       </header>
 
@@ -150,7 +176,7 @@ defmodule BeamlensWeb.DashboardLive do
         insight_count={length(@insights)}
       />
 
-      <main class="dashboard-main">
+      <main class="overflow-y-auto p-6 bg-base-100">
         <.main_panel
           selected_source={@selected_source}
           filtered_events={@filtered_events}
@@ -170,7 +196,7 @@ defmodule BeamlensWeb.DashboardLive do
   # Main panel rendering based on selected source
   defp main_panel(assigns) do
     ~H"""
-    <div class="main-panel">
+    <div class="flex flex-col gap-4 h-full">
       <.panel_header
         selected_source={@selected_source}
         event_type_filter={@event_type_filter}
@@ -178,15 +204,8 @@ defmodule BeamlensWeb.DashboardLive do
         events_paused={@events_paused}
       />
 
-      <%= case @selected_source do %>
-        <% :alerts -> %>
-          <.alerts_panel alerts={@alerts} />
-        <% :insights -> %>
-          <.insights_panel insights={@insights} />
-        <% :coordinator -> %>
-          <.coordinator_panel status={@coordinator_status} />
-        <% _ -> %>
-          <% # For :all and specific watchers, just show events %>
+      <%= if @selected_source == :coordinator do %>
+        <.coordinator_panel status={@coordinator_status} />
       <% end %>
 
       <.event_list events={@filtered_events} selected_event_id={@selected_event_id} />
@@ -196,9 +215,9 @@ defmodule BeamlensWeb.DashboardLive do
 
   defp panel_header(assigns) do
     ~H"""
-    <div class="panel-header">
-      <h2 class="panel-title"><%= panel_title(@selected_source) %></h2>
-      <div class="panel-controls">
+    <div class="flex items-center justify-between gap-4 shrink-0">
+      <h2 class="text-base font-semibold text-base-content"><%= panel_title(@selected_source) %></h2>
+      <div class="flex items-center gap-4">
         <.event_type_filter
           current_filter={@event_type_filter}
           selected_source={@selected_source}
@@ -206,12 +225,15 @@ defmodule BeamlensWeb.DashboardLive do
         <button
           type="button"
           phx-click="toggle_events_pause"
-          class={["pause-btn", @events_paused && "paused"]}
+          class={[
+            "btn btn-sm gap-1",
+            if(@events_paused, do: "btn-primary", else: "btn-ghost")
+          ]}
         >
           <%= if @events_paused do %>
-            <span class="pause-icon">▶</span> Resume
+            <.icon name="hero-play" class="w-4 h-4" /> Resume
           <% else %>
-            <span class="pause-icon">⏸</span> Pause
+            <.icon name="hero-pause" class="w-4 h-4" /> Pause
           <% end %>
         </button>
       </div>
@@ -221,15 +243,15 @@ defmodule BeamlensWeb.DashboardLive do
 
   defp event_type_filter(assigns) do
     ~H"""
-    <form phx-change="filter_events" class="type-filter-form">
-      <label for="event-type-filter">Type:</label>
-      <select id="event-type-filter" name="type">
+    <form phx-change="filter_events" class="flex items-center gap-2">
+      <label for="event-type-filter" class="text-sm text-base-content/70">Type:</label>
+      <select id="event-type-filter" name="type" class="select select-sm select-bordered">
         <option value="" selected={@current_filter == nil}>All Types</option>
         <%= for {value, label} <- type_options(@selected_source) do %>
           <option value={value} selected={@current_filter == value}><%= label %></option>
         <% end %>
       </select>
-      <button type="button" phx-click="clear_event_filters" class="filter-clear-btn">
+      <button type="button" phx-click="clear_event_filters" class="btn btn-ghost btn-sm">
         Clear
       </button>
     </form>
@@ -264,37 +286,9 @@ defmodule BeamlensWeb.DashboardLive do
     ]
   end
 
-  defp alerts_panel(assigns) do
-    ~H"""
-    <%= if Enum.empty?(@alerts) do %>
-      <div class="panel-summary empty">
-        <.empty_state icon="🔔" message="No alerts to display" />
-      </div>
-    <% else %>
-      <div class="panel-summary">
-        <.alert_list alerts={@alerts} />
-      </div>
-    <% end %>
-    """
-  end
-
-  defp insights_panel(assigns) do
-    ~H"""
-    <%= if Enum.empty?(@insights) do %>
-      <div class="panel-summary empty">
-        <.empty_state icon="💡" message="No insights have been produced yet" />
-      </div>
-    <% else %>
-      <div class="panel-summary">
-        <.insight_list insights={@insights} />
-      </div>
-    <% end %>
-    """
-  end
-
   defp coordinator_panel(assigns) do
     ~H"""
-    <div class="panel-summary">
+    <div class="shrink-0 max-h-72 overflow-y-auto">
       <.coordinator_status status={@status} />
     </div>
     """
@@ -537,4 +531,9 @@ defmodule BeamlensWeb.DashboardLive do
   end
 
   defp format_time(_), do: "-"
+
+  defp format_timestamp_for_file do
+    DateTime.utc_now()
+    |> Calendar.strftime("%Y%m%d-%H%M%S")
+  end
 end

@@ -22,4 +22,7 @@ beamlens_web-*.tar
 # Temporary files, for example, from tests.
 /tmp/
 
+# Node.js dependencies for CSS build
+/assets/node_modules/
+
 .env

@@ -5,6 +5,8 @@ defmodule BeamlensWeb.SidebarComponents do
 
   use Phoenix.Component
 
+  import BeamlensWeb.Icons
+
   @doc """
   Renders the main dashboard sidebar with sources and quick filters.
   """
@@ -16,21 +18,26 @@ defmodule BeamlensWeb.SidebarComponents do
 
   def source_sidebar(assigns) do
     ~H"""
-    <aside class="dashboard-sidebar">
-      <div class="sidebar-section">
+    <aside class="bg-base-200 border-r border-base-300 overflow-y-auto py-3">
+      <div class="px-2 mb-4">
         <button
           type="button"
           phx-click="select_source"
           phx-value-source="all"
-          class={["sidebar-item", @selected_source == :all && "selected"]}
+          class={[
+            "btn btn-ghost btn-sm justify-start w-full gap-2",
+            @selected_source == :all && "btn-active text-primary"
+          ]}
         >
-          <span class="sidebar-item-icon">○</span>
-          <span class="sidebar-item-label">All Sources</span>
+          <span class="text-sm w-5 text-center shrink-0">○</span>
+          <span class="flex-1 text-left truncate">All Sources</span>
         </button>
       </div>
 
-      <div class="sidebar-section">
-        <h3 class="sidebar-section-title">Watchers</h3>
+      <div class="px-2 mb-4">
+        <h3 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider px-3 py-2 mb-1">
+          Watchers
+        </h3>
         <%= for watcher <- @watchers do %>
           <.watcher_sidebar_item
             watcher={watcher}
@@ -38,42 +45,52 @@ defmodule BeamlensWeb.SidebarComponents do
           />
         <% end %>
         <%= if Enum.empty?(@watchers) do %>
-          <div class="sidebar-empty">No watchers running</div>
+          <div class="px-3 py-2 text-xs text-base-content/50 italic">No watchers running</div>
         <% end %>
       </div>
 
-      <div class="sidebar-section">
-        <h3 class="sidebar-section-title">Coordinator</h3>
+      <div class="px-2 mb-4">
+        <h3 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider px-3 py-2 mb-1">
+          Coordinator
+        </h3>
         <.coordinator_sidebar_item
           status={@coordinator_status}
           selected={@selected_source == :coordinator}
         />
       </div>
 
-      <div class="sidebar-section">
-        <h3 class="sidebar-section-title">Quick Filters</h3>
+      <div class="px-2 mb-4">
+        <h3 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider px-3 py-2 mb-1">
+          Quick Filters
+        </h3>
         <button
           type="button"
           phx-click="select_source"
           phx-value-source="alerts"
-          class={["sidebar-item", @selected_source == :alerts && "selected"]}
+          class={[
+            "btn btn-ghost btn-sm justify-start w-full gap-2",
+            @selected_source == :alerts && "btn-active text-primary"
+          ]}
         >
-          <span class="sidebar-item-icon">🔔</span>
-          <span class="sidebar-item-label">Alerts</span>
+          <.icon name="hero-bell" class="w-5 h-5 shrink-0" />
+          <span class="flex-1 text-left truncate">Alerts</span>
           <%= if @alert_count > 0 do %>
-            <span class="sidebar-item-count"><%= @alert_count %></span>
+            <span class="badge badge-sm badge-neutral"><%= @alert_count %></span>
           <% end %>
         </button>
         <button
           type="button"
           phx-click="select_source"
           phx-value-source="insights"
-          class={["sidebar-item", @selected_source == :insights && "selected"]}
+          class={[
+            "btn btn-ghost btn-sm justify-start w-full gap-2",
+            @selected_source == :insights && "btn-active text-primary"
+          ]}
         >
-          <span class="sidebar-item-icon">💡</span>
-          <span class="sidebar-item-label">Insights</span>
+          <.icon name="hero-light-bulb" class="w-5 h-5 shrink-0" />
+          <span class="flex-1 text-left truncate">Insights</span>
           <%= if @insight_count > 0 do %>
-            <span class="sidebar-item-count"><%= @insight_count %></span>
+            <span class="badge badge-sm badge-neutral"><%= @insight_count %></span>
           <% end %>
         </button>
       </div>
@@ -93,11 +110,17 @@ defmodule BeamlensWeb.SidebarComponents do
       type="button"
       phx-click="select_source"
       phx-value-source={@watcher.watcher}
-      class={["sidebar-item", @selected && "selected"]}
+      class={[
+        "btn btn-ghost btn-sm justify-start w-full gap-2",
+        @selected && "btn-active text-primary"
+      ]}
     >
-      <span class={["sidebar-status-dot", "status-#{@watcher.state}"]}></span>
-      <span class="sidebar-item-label"><%= format_watcher_name(@watcher.watcher) %></span>
-      <span class={["sidebar-state-badge", "badge-#{@watcher.state}"]}>
+      <span class={[
+        "w-2 h-2 rounded-full shrink-0",
+        status_dot_class(@watcher.state)
+      ]}></span>
+      <span class="flex-1 text-left truncate"><%= format_watcher_name(@watcher.watcher) %></span>
+      <span class={["badge badge-sm", state_badge_class(@watcher.state)]}>
         <%= @watcher.state %>
       </span>
     </button>
@@ -116,26 +139,28 @@ defmodule BeamlensWeb.SidebarComponents do
       type="button"
       phx-click="select_source"
       phx-value-source="coordinator"
-      class={["sidebar-item coordinator-item", @selected && "selected"]}
+      class={[
+        "btn btn-ghost btn-sm justify-start w-full gap-2",
+        @selected && "btn-active text-primary"
+      ]}
     >
-      <span class={["sidebar-status-dot", @status.running && "status-running" || "status-stopped"]}></span>
-      <span class="sidebar-item-label">Status</span>
-      <span class="sidebar-item-meta">
-        <%= if @status.running do %>
-          running
-        <% else %>
-          stopped
-        <% end %>
+      <span class={[
+        "w-2 h-2 rounded-full shrink-0",
+        if(@status.running, do: "bg-success", else: "bg-error")
+      ]}></span>
+      <span class="flex-1 text-left truncate">Status</span>
+      <span class="text-xs text-base-content/50">
+        <%= if @status.running, do: "running", else: "stopped" %>
       </span>
     </button>
-    <div class="coordinator-stats">
-      <div class="coordinator-stat">
-        <span class="stat-count"><%= @status.alert_count || 0 %></span>
-        <span class="stat-label">alerts</span>
+    <div class="flex gap-4 px-3 py-1 pl-8">
+      <div class="flex items-baseline gap-1">
+        <span class="text-sm font-semibold text-base-content"><%= @status.alert_count || 0 %></span>
+        <span class="text-xs text-base-content/50">alerts</span>
       </div>
-      <div class="coordinator-stat">
-        <span class="stat-count"><%= @status.unread_count || 0 %></span>
-        <span class="stat-label">unread</span>
+      <div class="flex items-baseline gap-1">
+        <span class="text-sm font-semibold text-base-content"><%= @status.unread_count || 0 %></span>
+        <span class="text-xs text-base-content/50">unread</span>
       </div>
     </div>
     """
@@ -150,4 +175,16 @@ defmodule BeamlensWeb.SidebarComponents do
   end
 
   defp format_watcher_name(name), do: to_string(name)
+
+  defp status_dot_class(:healthy), do: "bg-success"
+  defp status_dot_class(:observing), do: "bg-info"
+  defp status_dot_class(:warning), do: "bg-warning"
+  defp status_dot_class(:critical), do: "bg-error"
+  defp status_dot_class(_), do: "bg-neutral"
+
+  defp state_badge_class(:healthy), do: "badge-success"
+  defp state_badge_class(:observing), do: "badge-info"
+  defp state_badge_class(:warning), do: "badge-warning"
+  defp state_badge_class(:critical), do: "badge-error"
+  defp state_badge_class(_), do: "badge-neutral"
 end

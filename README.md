@@ -1,11 +1,20 @@
 # BeamlensWeb
 
-**TODO: Add description**
+A Phoenix LiveView dashboard for monitoring BeamLens watchers and coordinator activity. Provides real-time visibility into system health, alerts, and insights.
+
+## Features
+
+- Real-time event stream with filtering and search
+- Watcher status monitoring with state badges
+- Coordinator status and iteration tracking
+- Alert and insight quick filters
+- Multi-node cluster support
+- JSON export for analysis
+- Light/dark/system theme support
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `beamlens_web` to your list of dependencies in `mix.exs`:
+Add `beamlens_web` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
@@ -15,7 +24,118 @@ def deps do
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/beamlens_web>.
+### Configure your router
 
+Add the dashboard route to your Phoenix router:
+
+```elixir
+import BeamlensWeb.Router
+
+scope "/" do
+  pipe_through :browser
+  beamlens_dashboard "/dashboard"
+end
+```
+
+### Serve static assets
+
+The library includes pre-built CSS. Configure your endpoint to serve static files from the library:
+
+```elixir
+# In your endpoint.ex
+plug Plug.Static,
+  at: "/",
+  from: :beamlens_web,
+  gzip: false,
+  only: ~w(assets)
+```
+
+## Development
+
+### Prerequisites
+
+- Elixir 1.18+
+- Node.js 18+ (for CSS development only)
+
+### Setup
+
+```bash
+mix deps.get
+```
+
+### CSS Development
+
+The dashboard uses Tailwind CSS 4 with DaisyUI 5. CSS source is in `assets/css/app.css` and builds to `priv/static/assets/app.css`.
+
+```bash
+# Install Node.js dependencies
+cd assets && npm install
+
+# Build CSS (one-time)
+npm run build
+
+# Watch mode for development
+npm run watch
+
+# Build minified for production
+npm run build:minify
+```
+
+Or use the build script from the project root:
+
+```bash
+./scripts/build_css.sh          # Build
+./scripts/build_css.sh --watch  # Watch mode
+./scripts/build_css.sh --minify # Minified
+```
+
+### Theming
+
+The dashboard includes custom "Warm Ember" themes:
+
+- **Dark theme** (`warm-ember-dark`): Default, dark background with orange accents
+- **Light theme** (`warm-ember-light`): Light background variant
+- **System mode**: Follows OS color scheme preference
+
+Theme selection is persisted to localStorage and can be changed via the dropdown in the header.
+
+To customize themes, edit the CSS variables in `assets/css/app.css`:
+
+```css
+[data-theme="warm-ember-dark"] {
+  --color-base-100: #0f1115;
+  --color-primary: #FD4F00;
+  /* ... */
+}
+```
+
+### Running tests
+
+```bash
+mix test
+```
+
+## Architecture
+
+```
+lib/beamlens_web/
+├── application.ex          # OTP application
+├── endpoint.ex             # Phoenix endpoint
+├── router.ex               # Routes
+├── components/
+│   ├── core_components.ex       # Shared UI components
+│   ├── layouts.ex               # Root/dashboard layouts
+│   ├── sidebar_components.ex    # Sidebar navigation
+│   ├── event_components.ex      # Event list/detail views
+│   └── coordinator_components.ex # Coordinator status
+├── live/
+│   └── dashboard_live.ex   # Main dashboard LiveView
+└── stores/
+    ├── alert_store.ex      # Alert state management
+    ├── event_store.ex      # Event stream storage
+    └── insight_store.ex    # Insight state management
+```
+
+## License
+
+See LICENSE file.

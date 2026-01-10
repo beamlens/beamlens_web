@@ -5,6 +5,8 @@ defmodule BeamlensWeb.CoreComponents do
 
   use Phoenix.Component
 
+  import BeamlensWeb.Icons
+
   @doc """
   Renders a badge with the given variant.
   """
@@ -27,7 +29,10 @@ defmodule BeamlensWeb.CoreComponents do
 
   def status_dot(assigns) do
     ~H"""
-    <span class={["status-dot", if(@running, do: "running", else: "stopped")]}></span>
+    <span class={[
+      "w-2 h-2 rounded-full inline-block",
+      if(@running, do: "bg-success", else: "bg-error")
+    ]}></span>
     """
   end
 
@@ -39,7 +44,7 @@ defmodule BeamlensWeb.CoreComponents do
 
   def card(assigns) do
     ~H"""
-    <div class={["card", @class]}>
+    <div class={["card bg-base-200 border border-base-300 rounded-lg overflow-hidden", @class]}>
       <%= render_slot(@inner_block) %>
     </div>
     """
@@ -48,13 +53,13 @@ defmodule BeamlensWeb.CoreComponents do
   @doc """
   Renders an empty state message.
   """
-  attr(:icon, :string, default: "📭")
+  attr(:icon, :string, default: "hero-inbox")
   attr(:message, :string, required: true)
 
   def empty_state(assigns) do
     ~H"""
-    <div class="empty-state">
-      <div class="empty-state-icon"><%= @icon %></div>
+    <div class="text-center py-12 px-4 text-base-content/50">
+      <.icon name={@icon} class="w-12 h-12 mx-auto mb-3 opacity-50" />
       <p><%= @message %></p>
     </div>
     """
@@ -96,9 +101,9 @@ defmodule BeamlensWeb.CoreComponents do
 
   def node_selector(assigns) do
     ~H"""
-    <form phx-change="select_node" class="node-selector">
-      <label for="node-select">Node:</label>
-      <select id="node-select" name="node">
+    <form phx-change="select_node" class="flex items-center gap-2">
+      <label for="node-select" class="text-sm text-base-content/70">Node:</label>
+      <select id="node-select" name="node" class="select select-sm select-bordered">
         <%= for node <- @available_nodes do %>
           <option value={node} selected={@selected_node == node}>
             <%= format_node_name(node) %>
@@ -116,7 +121,7 @@ defmodule BeamlensWeb.CoreComponents do
 
   def node_badge(assigns) do
     ~H"""
-    <span class="node-badge" title={to_string(@node)}>
+    <span class="badge badge-sm badge-ghost font-mono" title={to_string(@node)}>
       <%= format_node_name(@node) %>
     </span>
     """
@@ -137,4 +142,39 @@ defmodule BeamlensWeb.CoreComponents do
   end
 
   def format_node_name(node), do: to_string(node)
+
+  @doc """
+  Renders a theme toggle dropdown for switching between light, dark, and system modes.
+  """
+  def theme_toggle(assigns) do
+    ~H"""
+    <div class="dropdown dropdown-end">
+      <div tabindex="0" role="button" class="btn btn-ghost btn-sm btn-circle">
+        <.icon name="hero-sun" class="w-5 h-5 theme-icon-light" />
+        <.icon name="hero-moon" class="w-5 h-5 theme-icon-dark" />
+        <.icon name="hero-computer-desktop" class="w-5 h-5 theme-icon-system" />
+      </div>
+      <ul tabindex="0" class="dropdown-content z-50 menu p-2 shadow-lg bg-base-200 rounded-box w-36">
+        <li>
+          <a onclick="setTheme('light')" class="flex gap-2">
+            <.icon name="hero-sun" class="w-4 h-4" />
+            Light
+          </a>
+        </li>
+        <li>
+          <a onclick="setTheme('dark')" class="flex gap-2">
+            <.icon name="hero-moon" class="w-4 h-4" />
+            Dark
+          </a>
+        </li>
+        <li>
+          <a onclick="setTheme('system')" class="flex gap-2">
+            <.icon name="hero-computer-desktop" class="w-4 h-4" />
+            System
+          </a>
+        </li>
+      </ul>
+    </div>
+    """
+  end
 end

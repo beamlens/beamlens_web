@@ -1,0 +1,15 @@
+{
+  "name": "beamlens_web_assets",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "npx @tailwindcss/cli --input css/app.css --output ../priv/static/assets/app.css",
+    "build:minify": "npx @tailwindcss/cli --input css/app.css --output ../priv/static/assets/app.css --minify",
+    "watch": "npx @tailwindcss/cli --input css/app.css --output ../priv/static/assets/app.css --watch"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.0",
+    "tailwindcss": "^4.1.0",
+    "daisyui": "^5.0.0"
+  }
+}
