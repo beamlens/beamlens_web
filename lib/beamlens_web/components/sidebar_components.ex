@@ -121,7 +121,7 @@ defmodule BeamlensWeb.SidebarComponents do
       ]}></span>
       <span class="flex-1 text-left truncate"><%= format_watcher_name(@watcher.watcher) %></span>
       <span class={["badge badge-sm", state_badge_class(@watcher.state)]}>
-        <%= @watcher.state %>
+        <%= format_state(@watcher.state) %>
       </span>
     </button>
     """
@@ -187,4 +187,10 @@ defmodule BeamlensWeb.SidebarComponents do
   defp state_badge_class(:warning), do: "badge-warning"
   defp state_badge_class(:critical), do: "badge-error"
   defp state_badge_class(_), do: "badge-neutral"
+
+  defp format_state(state) when is_atom(state) do
+    state |> Atom.to_string() |> String.upcase()
+  end
+
+  defp format_state(state), do: to_string(state) |> String.upcase()
 end
