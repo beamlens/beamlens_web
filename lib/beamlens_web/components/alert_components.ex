@@ -13,17 +13,17 @@ defmodule BeamlensWeb.AlertComponents do
 
   def alert_card(assigns) do
     ~H"""
-    <.card>
-      <div class="card-header">
+    <.card class="mb-4">
+      <div class="p-4 border-b border-base-300 flex items-center gap-3">
         <.badge variant={@alert.severity}><%= @alert.severity %></.badge>
         <.badge variant={@alert.status}><%= @alert.status %></.badge>
-        <span class="watcher-name"><%= format_watcher_name(@alert.watcher) %></span>
+        <span class="font-medium text-base-content"><%= format_watcher_name(@alert.watcher) %></span>
       </div>
-      <div class="card-body">
-        <p class="alert-summary"><%= @alert.summary %></p>
-        <div class="alert-meta">
+      <div class="p-4">
+        <p class="text-base mb-3"><%= @alert.summary %></p>
+        <div class="flex flex-wrap gap-3 text-sm text-base-content/70">
           <span>Type: <%= @alert.anomaly_type %></span>
-          <span class="timestamp"><%= format_datetime(@alert.detected_at) %></span>
+          <span class="font-mono text-xs"><%= format_datetime(@alert.detected_at) %></span>
         </div>
       </div>
     </.card>
@@ -38,32 +38,44 @@ defmodule BeamlensWeb.AlertComponents do
 
   def alert_filters(assigns) do
     ~H"""
-    <div class="filter-pills">
+    <div class="flex flex-wrap gap-2 mb-4">
       <button
         phx-click="filter_alerts"
         phx-value-status=""
-        class={["filter-pill", @current_filter == nil && "active"]}
+        class={[
+          "btn btn-sm",
+          if(@current_filter == nil, do: "btn-primary", else: "btn-ghost")
+        ]}
       >
         All (<%= @counts.total %>)
       </button>
       <button
         phx-click="filter_alerts"
         phx-value-status="unread"
-        class={["filter-pill", @current_filter == :unread && "active"]}
+        class={[
+          "btn btn-sm",
+          if(@current_filter == :unread, do: "btn-warning", else: "btn-ghost")
+        ]}
       >
         Unread (<%= @counts.unread %>)
       </button>
       <button
         phx-click="filter_alerts"
         phx-value-status="acknowledged"
-        class={["filter-pill", @current_filter == :acknowledged && "active"]}
+        class={[
+          "btn btn-sm",
+          if(@current_filter == :acknowledged, do: "btn-info", else: "btn-ghost")
+        ]}
       >
         Acknowledged (<%= @counts.acknowledged %>)
       </button>
       <button
         phx-click="filter_alerts"
         phx-value-status="resolved"
-        class={["filter-pill", @current_filter == :resolved && "active"]}
+        class={[
+          "btn btn-sm",
+          if(@current_filter == :resolved, do: "btn-success", else: "btn-ghost")
+        ]}
       >
         Resolved (<%= @counts.resolved %>)
       </button>

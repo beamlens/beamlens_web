@@ -13,13 +13,13 @@ defmodule BeamlensWeb.WatcherComponents do
 
   def watcher_card(assigns) do
     ~H"""
-    <.card>
-      <div class="card-header">
+    <.card class="mb-4">
+      <div class="p-4 flex items-center gap-3">
         <.badge variant={@watcher.state}><%= @watcher.state %></.badge>
-        <span class="watcher-name"><%= format_watcher_name(@watcher.watcher) %></span>
-        <div class="watcher-running">
+        <span class="font-medium text-base-content flex-1"><%= format_watcher_name(@watcher.watcher) %></span>
+        <div class="flex items-center gap-2 text-sm text-base-content/70">
           <.status_dot running={@watcher.running} />
-          <%= if @watcher.running, do: "Running", else: "Stopped" %>
+          <span><%= if @watcher.running, do: "Running", else: "Stopped" %></span>
         </div>
       </div>
     </.card>
@@ -33,7 +33,7 @@ defmodule BeamlensWeb.WatcherComponents do
 
   def watcher_list(assigns) do
     ~H"""
-    <div class="watcher-grid">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <%= for watcher <- @watchers do %>
         <.watcher_card watcher={watcher} />
       <% end %>

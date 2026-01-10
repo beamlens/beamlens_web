@@ -9,6 +9,13 @@ defmodule BeamlensWeb.CoreComponents do
 
   @doc """
   Renders a badge with the given variant.
+
+  Variants are mapped to DaisyUI badge classes:
+  - States: `:healthy`, `:observing`, `:warning`, `:critical`, `:idle`
+  - Severities: `:info`, `:warning`, `:critical`
+  - Alert statuses: `:unread`, `:acknowledged`, `:resolved`
+  - Confidence: `:high`, `:medium`, `:low`
+  - Correlation types: `:temporal`, `:causal`, `:pattern`
   """
   attr(:variant, :atom, required: true)
   attr(:class, :string, default: nil)
@@ -16,11 +23,35 @@ defmodule BeamlensWeb.CoreComponents do
 
   def badge(assigns) do
     ~H"""
-    <span class={["badge", "badge-#{@variant}", @class]}>
+    <span class={["badge badge-sm", variant_class(@variant), @class]}>
       <%= render_slot(@inner_block) %>
     </span>
     """
   end
+
+  # Maps semantic variants to DaisyUI badge classes
+  defp variant_class(:healthy), do: "badge-success"
+  defp variant_class(:observing), do: "badge-info"
+  defp variant_class(:warning), do: "badge-warning"
+  defp variant_class(:critical), do: "badge-error"
+  defp variant_class(:idle), do: "badge-neutral"
+  # Alert severities
+  defp variant_class(:info), do: "badge-info"
+  # Alert statuses
+  defp variant_class(:unread), do: "badge-warning"
+  defp variant_class(:acknowledged), do: "badge-info"
+  defp variant_class(:resolved), do: "badge-success"
+  # Insight confidence
+  defp variant_class(:high), do: "badge-success"
+  defp variant_class(:medium), do: "badge-warning"
+  defp variant_class(:low), do: "badge-neutral"
+  # Insight correlation types
+  defp variant_class(:temporal), do: "badge-info"
+  defp variant_class(:causal), do: "badge-primary"
+  defp variant_class(:pattern), do: "badge-secondary"
+  defp variant_class(:common_cause), do: "badge-accent"
+  # Fallback
+  defp variant_class(_), do: "badge-neutral"
 
   @doc """
   Renders a status indicator dot.
