@@ -23,9 +23,13 @@
   --color-neutral-content: #f3f4f6;
 
   --color-info: #06b6d4;
+  --color-info-content: #ffffff;
   --color-success: #10b981;
+  --color-success-content: #ffffff;
   --color-warning: #f59e0b;
+  --color-warning-content: #ffffff;
   --color-error: #ef4444;
+  --color-error-content: #ffffff;
 
   --rounded-box: 0.5rem;
   --rounded-btn: 0.375rem;
@@ -52,9 +56,13 @@
   --color-neutral-content: #1c1917;
 
   --color-info: #0891b2;
+  --color-info-content: #ffffff;
   --color-success: #059669;
+  --color-success-content: #ffffff;
   --color-warning: #d97706;
+  --color-warning-content: #ffffff;
   --color-error: #dc2626;
+  --color-error-content: #ffffff;
 
   --rounded-box: 0.5rem;
   --rounded-btn: 0.375rem;
