@@ -816,23 +816,23 @@ defmodule BeamlensWeb.DashboardLive do
         {:error, _reason} -> []
       end
 
-    # Get builtin skill names
-    builtin_skills =
-      case rpc_call(node, Beamlens.Operator.Supervisor, :builtin_skills, []) do
-        {:ok, skills} -> skills
+    # Get all configured operator names (builtin + custom)
+    configured_operators =
+      case rpc_call(node, Beamlens.Operator.Supervisor, :configured_operators, []) do
+        {:ok, operators} -> operators
         {:error, _reason} -> []
       end
 
     # Create a map of running watchers by name
     running_map = Map.new(running_watchers, fn w -> {w.watcher, w} end)
 
-    # Merge: show all builtin skills, with running status if available
-    builtin_skills
-    |> Enum.map(fn skill ->
-      case Map.get(running_map, skill) do
+    # Merge: show all configured operators, with running status if available
+    configured_operators
+    |> Enum.map(fn operator ->
+      case Map.get(running_map, operator) do
         nil ->
           # Not running - create a stopped entry
-          %{watcher: skill, name: skill, state: :healthy, running: false}
+          %{watcher: operator, name: operator, state: :healthy, running: false}
 
         watcher ->
           watcher
