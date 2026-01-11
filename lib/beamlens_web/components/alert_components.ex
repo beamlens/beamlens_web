@@ -20,7 +20,7 @@ defmodule BeamlensWeb.AlertComponents do
       <div class="p-4 border-b border-base-300 flex items-center gap-3 pr-10">
         <.badge variant={@alert.severity}><%= @alert.severity %></.badge>
         <.badge variant={@alert.status}><%= @alert.status %></.badge>
-        <span class="font-medium text-base-content"><%= format_watcher_name(@alert.watcher) %></span>
+        <span class="font-medium text-base-content"><%= format_operator_name(@alert.operator) %></span>
         <span class="flex-1"></span>
         <.copyable value={@alert.id} display={String.slice(@alert.id, 0..7) <> "..."} code={true} />
       </div>
@@ -105,7 +105,7 @@ defmodule BeamlensWeb.AlertComponents do
     """
   end
 
-  defp format_watcher_name(name) when is_atom(name) do
+  defp format_operator_name(name) when is_atom(name) do
     name
     |> Atom.to_string()
     |> String.split("_")
@@ -113,5 +113,5 @@ defmodule BeamlensWeb.AlertComponents do
     |> Enum.join(" ")
   end
 
-  defp format_watcher_name(name), do: to_string(name)
+  defp format_operator_name(name), do: to_string(name)
 end

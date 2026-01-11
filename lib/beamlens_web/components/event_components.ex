@@ -24,7 +24,7 @@ defmodule BeamlensWeb.EventComponents do
           <.icon name="hero-inbox" class="w-12 h-12 mx-auto mb-3 opacity-50" />
           <p>No events recorded yet</p>
           <p class="text-xs mt-2">
-            Events will appear here as watchers and coordinator run
+            Events will appear here as operators and coordinator run
           </p>
         </div>
       <% else %>
@@ -253,7 +253,7 @@ defmodule BeamlensWeb.EventComponents do
   end
 
   defp format_event_details(%{event_type: :iteration_start, metadata: meta}) do
-    "Iteration ##{meta[:iteration] || "?"} started (#{meta[:watcher_state] || "?"})"
+    "Iteration ##{meta[:iteration] || "?"} started (#{meta[:operator_state] || "?"})"
   end
 
   defp format_event_details(%{event_type: :state_change, metadata: meta}) do
@@ -282,7 +282,7 @@ defmodule BeamlensWeb.EventComponents do
   end
 
   defp format_event_details(%{event_type: :alert_received, metadata: meta}) do
-    "Alert #{String.slice(meta[:alert_id] || "", 0..7)} from #{meta[:watcher]}"
+    "Alert #{String.slice(meta[:alert_id] || "", 0..7)} from #{meta[:operator]}"
   end
 
   defp format_event_details(%{event_type: :insight_produced, metadata: meta}) do

@@ -1,8 +1,8 @@
 defmodule BeamlensWeb.AlertStore do
   @moduledoc """
-  ETS-based store for alerts received from BeamLens watchers.
+  ETS-based store for alerts received from BeamLens operators.
 
-  Subscribes to `[:beamlens, :watcher, :alert_fired]` telemetry events
+  Subscribes to `[:beamlens, :operator, :alert_fired]` telemetry events
   and stores alerts for display in the dashboard.
   """
 
@@ -79,7 +79,7 @@ defmodule BeamlensWeb.AlertStore do
 
     :telemetry.attach(
       @telemetry_handler_id,
-      [:beamlens, :watcher, :alert_fired],
+      [:beamlens, :operator, :alert_fired],
       &__MODULE__.handle_telemetry_event/4,
       nil
     )
@@ -96,7 +96,7 @@ defmodule BeamlensWeb.AlertStore do
   def handle_telemetry_event(_event, _measurements, %{alert: alert}, _config) do
     alert_data = %{
       id: alert.id,
-      watcher: alert.watcher,
+      operator: alert.operator,
       anomaly_type: alert.anomaly_type,
       severity: alert.severity,
       summary: alert.summary,

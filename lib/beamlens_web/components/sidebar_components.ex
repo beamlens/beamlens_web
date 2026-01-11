@@ -11,7 +11,7 @@ defmodule BeamlensWeb.SidebarComponents do
   Renders the main dashboard sidebar with sources and quick filters.
   """
   attr(:selected_source, :any, required: true)
-  attr(:watchers, :list, required: true)
+  attr(:operators, :list, required: true)
   attr(:coordinator_status, :map, required: true)
   attr(:alert_count, :integer, default: 0)
   attr(:insight_count, :integer, default: 0)
@@ -60,18 +60,18 @@ defmodule BeamlensWeb.SidebarComponents do
       <div class="px-2 mb-4">
         <div class="flex items-center justify-between px-3 py-2 mb-1">
           <h2 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider">
-            Watchers
+            Operators
           </h2>
-          <.all_watchers_controls watchers={@watchers} />
+          <.all_operators_controls operators={@operators} />
         </div>
-        <%= for watcher <- @watchers do %>
-          <.watcher_sidebar_item
-            watcher={watcher}
-            selected={@selected_source == watcher.watcher}
+        <%= for operator <- @operators do %>
+          <.operator_sidebar_item
+            operator={operator}
+            selected={@selected_source == operator.operator}
           />
         <% end %>
-        <%= if Enum.empty?(@watchers) do %>
-          <div class="px-3 py-2 text-xs text-base-content/50 italic">No watchers running</div>
+        <%= if Enum.empty?(@operators) do %>
+          <div class="px-3 py-2 text-xs text-base-content/50 italic">No operators running</div>
         <% end %>
       </div>
 
@@ -125,25 +125,25 @@ defmodule BeamlensWeb.SidebarComponents do
   end
 
   @doc """
-  Renders a watcher item in the sidebar.
+  Renders an operator item in the sidebar.
   """
-  attr(:watcher, :map, required: true)
+  attr(:operator, :map, required: true)
   attr(:selected, :boolean, default: false)
 
-  def watcher_sidebar_item(assigns) do
+  def operator_sidebar_item(assigns) do
     ~H"""
     <div class="flex items-center gap-1">
       <button
         type="button"
-        phx-click={if @watcher.running, do: "stop_watcher", else: "restart_watcher"}
-        phx-value-watcher={@watcher.watcher}
+        phx-click={if @operator.running, do: "stop_operator", else: "restart_operator"}
+        phx-value-operator={@operator.operator}
         class={[
           "btn btn-ghost btn-xs btn-square",
-          if(@watcher.running, do: "text-success hover:text-success", else: "text-error hover:text-error")
+          if(@operator.running, do: "text-success hover:text-success", else: "text-error hover:text-error")
         ]}
-        title={if @watcher.running, do: "Click to stop #{format_watcher_name(@watcher.watcher)}", else: "Click to start #{format_watcher_name(@watcher.watcher)}"}
+        title={if @operator.running, do: "Click to stop #{format_operator_name(@operator.operator)}", else: "Click to start #{format_operator_name(@operator.operator)}"}
       >
-        <%= if @watcher.running do %>
+        <%= if @operator.running do %>
           <.icon name="hero-stop-circle" class="w-4 h-4" />
         <% else %>
           <.icon name="hero-play-circle" class="w-4 h-4" />
@@ -152,13 +152,13 @@ defmodule BeamlensWeb.SidebarComponents do
       <button
         type="button"
         phx-click="select_source"
-        phx-value-source={@watcher.watcher}
+        phx-value-source={@operator.operator}
         class={[
           "btn btn-ghost btn-sm justify-start flex-1 gap-2",
           @selected && "btn-active text-primary"
         ]}
       >
-        <span class="flex-1 text-left truncate"><%= format_watcher_name(@watcher.watcher) %></span>
+        <span class="flex-1 text-left truncate"><%= format_operator_name(@operator.operator) %></span>
       </button>
     </div>
     """
@@ -214,13 +214,13 @@ defmodule BeamlensWeb.SidebarComponents do
   end
 
   @doc """
-  Renders start/stop all controls for watchers.
+  Renders start/stop all controls for operators.
   """
-  attr(:watchers, :list, required: true)
+  attr(:operators, :list, required: true)
 
-  def all_watchers_controls(assigns) do
-    all_running = Enum.all?(assigns.watchers, & &1.running)
-    any_running = Enum.any?(assigns.watchers, & &1.running)
+  def all_operators_controls(assigns) do
+    all_running = Enum.all?(assigns.operators, & &1.running)
+    any_running = Enum.any?(assigns.operators, & &1.running)
     assigns = assign(assigns, all_running: all_running, any_running: any_running)
 
     ~H"""
@@ -228,9 +228,9 @@ defmodule BeamlensWeb.SidebarComponents do
       <% @all_running -> %>
         <button
           type="button"
-          phx-click="stop_all_watchers"
+          phx-click="stop_all_operators"
           class="btn btn-ghost btn-xs btn-square text-success hover:text-success"
-          title="Click to stop all watchers"
+          title="Click to stop all operators"
         >
           <.icon name="hero-stop-circle" class="w-4 h-4" />
         </button>
@@ -238,17 +238,17 @@ defmodule BeamlensWeb.SidebarComponents do
         <div class="flex">
           <button
             type="button"
-            phx-click="start_all_watchers"
+            phx-click="start_all_operators"
             class="btn btn-ghost btn-xs btn-square text-error hover:text-error"
-            title="Click to start all watchers"
+            title="Click to start all operators"
           >
             <.icon name="hero-play-circle" class="w-4 h-4" />
           </button>
           <button
             type="button"
-            phx-click="stop_all_watchers"
+            phx-click="stop_all_operators"
             class="btn btn-ghost btn-xs btn-square text-success hover:text-success"
-            title="Click to stop all watchers"
+            title="Click to stop all operators"
           >
             <.icon name="hero-stop-circle" class="w-4 h-4" />
           </button>
@@ -256,9 +256,9 @@ defmodule BeamlensWeb.SidebarComponents do
       <% true -> %>
         <button
           type="button"
-          phx-click="start_all_watchers"
+          phx-click="start_all_operators"
           class="btn btn-ghost btn-xs btn-square text-error hover:text-error"
-          title="Click to start all watchers"
+          title="Click to start all operators"
         >
           <.icon name="hero-play-circle" class="w-4 h-4" />
         </button>
@@ -266,13 +266,11 @@ defmodule BeamlensWeb.SidebarComponents do
     """
   end
 
-  # Private helper functions
-
-  defp format_watcher_name(name) when is_atom(name) do
+  defp format_operator_name(name) when is_atom(name) do
     name
     |> Atom.to_string()
     |> String.capitalize()
   end
 
-  defp format_watcher_name(name), do: to_string(name)
+  defp format_operator_name(name), do: to_string(name)
 end

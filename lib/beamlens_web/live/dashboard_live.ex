@@ -3,7 +3,7 @@ defmodule BeamlensWeb.DashboardLive do
   Main LiveView for the BeamLens dashboard.
 
   Uses a sidebar + main panel layout:
-  - Sidebar: Shows sources (watchers, coordinator) and quick filters (alerts, insights)
+  - Sidebar: Shows sources (operators, coordinator) and quick filters (alerts, insights)
   - Main panel: Shows events filtered by selection, with cards for alerts/insights views
 
   Supports cluster-wide monitoring via node selection.
@@ -43,7 +43,7 @@ defmodule BeamlensWeb.DashboardLive do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    source = parse_source_param(params["source"], socket.assigns.watchers)
+    source = parse_source_param(params["source"], socket.assigns.operators)
     type_filter = parse_type_param(params["type"])
 
     {:noreply,
@@ -55,7 +55,7 @@ defmodule BeamlensWeb.DashboardLive do
 
   @impl true
   def handle_event("select_source", %{"source" => source}, socket) do
-    source_atom = parse_source_string(source, socket.assigns.watchers)
+    source_atom = parse_source_string(source, socket.assigns.operators)
 
     {:noreply,
      socket
@@ -163,64 +163,63 @@ defmodule BeamlensWeb.DashboardLive do
     {:noreply, push_event(socket, "copy", %{text: formatted, copyId: nil})}
   end
 
-  def handle_event("restart_watcher", %{"watcher" => watcher_str}, socket) do
-    watcher = String.to_existing_atom(watcher_str)
+  def handle_event("restart_operator", %{"operator" => operator_str}, socket) do
+    operator = String.to_existing_atom(operator_str)
     node = socket.assigns.selected_node
 
-    # Stop and restart the watcher
-    _ = rpc_call(node, Beamlens.Operator.Supervisor, :stop_operator, [watcher])
-    result = rpc_call(node, Beamlens.Operator.Supervisor, :start_operator, [watcher])
+    _ = rpc_call(node, Beamlens.Operator.Supervisor, :stop_operator, [operator])
+    result = rpc_call(node, Beamlens.Operator.Supervisor, :start_operator, [operator])
 
     socket =
       case result do
         {:ok, {:ok, _pid}} ->
           socket
-          |> put_flash(:info, "Watcher #{watcher} restarted successfully")
+          |> put_flash(:info, "Operator #{operator} restarted successfully")
           |> refresh_data()
 
         {:ok, {:error, reason}} ->
-          put_flash(socket, :error, "Failed to restart #{watcher}: #{inspect(reason)}")
+          put_flash(socket, :error, "Failed to restart #{operator}: #{inspect(reason)}")
 
         {:error, reason} ->
-          put_flash(socket, :error, "RPC error restarting #{watcher}: #{inspect(reason)}")
+          put_flash(socket, :error, "RPC error restarting #{operator}: #{inspect(reason)}")
       end
 
     {:noreply, socket}
   end
 
-  def handle_event("stop_watcher", %{"watcher" => watcher_str}, socket) do
-    watcher = String.to_existing_atom(watcher_str)
+  def handle_event("stop_operator", %{"operator" => operator_str}, socket) do
+    operator = String.to_existing_atom(operator_str)
     node = socket.assigns.selected_node
 
-    result = rpc_call(node, Beamlens.Operator.Supervisor, :stop_operator, [watcher])
+    result = rpc_call(node, Beamlens.Operator.Supervisor, :stop_operator, [operator])
 
     socket =
       case result do
         {:ok, :ok} ->
           socket
-          |> put_flash(:info, "Watcher #{watcher} stopped")
+          |> put_flash(:info, "Operator #{operator} stopped")
           |> refresh_data()
 
         {:ok, {:error, :not_found}} ->
-          put_flash(socket, :error, "Watcher #{watcher} not found")
+          put_flash(socket, :error, "Operator #{operator} not found")
 
         {:error, reason} ->
-          put_flash(socket, :error, "RPC error stopping #{watcher}: #{inspect(reason)}")
+          put_flash(socket, :error, "RPC error stopping #{operator}: #{inspect(reason)}")
       end
 
     {:noreply, socket}
   end
 
-  def handle_event("start_all_watchers", _params, socket) do
+  def handle_event("start_all_operators", _params, socket) do
     node = socket.assigns.selected_node
-    watchers = socket.assigns.watchers
+    operators = socket.assigns.operators
 
-    stopped_watchers = Enum.reject(watchers, & &1.running)
+    stopped_operators = Enum.reject(operators, & &1.running)
 
     results =
-      Enum.map(stopped_watchers, fn watcher ->
-        {watcher.watcher,
-         rpc_call(node, Beamlens.Operator.Supervisor, :start_operator, [watcher.watcher])}
+      Enum.map(stopped_operators, fn op ->
+        {op.operator,
+         rpc_call(node, Beamlens.Operator.Supervisor, :start_operator, [op.operator])}
       end)
 
     {successes, failures} =
@@ -231,12 +230,12 @@ defmodule BeamlensWeb.DashboardLive do
 
     socket =
       cond do
-        Enum.empty?(stopped_watchers) ->
-          put_flash(socket, :info, "All watchers are already running")
+        Enum.empty?(stopped_operators) ->
+          put_flash(socket, :info, "All operators are already running")
 
         Enum.empty?(failures) ->
           socket
-          |> put_flash(:info, "Started #{length(successes)} watcher(s)")
+          |> put_flash(:info, "Started #{length(successes)} operator(s)")
           |> refresh_data()
 
         true ->
@@ -250,16 +249,15 @@ defmodule BeamlensWeb.DashboardLive do
     {:noreply, socket}
   end
 
-  def handle_event("stop_all_watchers", _params, socket) do
+  def handle_event("stop_all_operators", _params, socket) do
     node = socket.assigns.selected_node
-    watchers = socket.assigns.watchers
+    operators = socket.assigns.operators
 
-    running_watchers = Enum.filter(watchers, & &1.running)
+    running_operators = Enum.filter(operators, & &1.running)
 
     results =
-      Enum.map(running_watchers, fn watcher ->
-        {watcher.watcher,
-         rpc_call(node, Beamlens.Operator.Supervisor, :stop_operator, [watcher.watcher])}
+      Enum.map(running_operators, fn op ->
+        {op.operator, rpc_call(node, Beamlens.Operator.Supervisor, :stop_operator, [op.operator])}
       end)
 
     {successes, failures} =
@@ -270,12 +268,12 @@ defmodule BeamlensWeb.DashboardLive do
 
     socket =
       cond do
-        Enum.empty?(running_watchers) ->
-          put_flash(socket, :info, "All watchers are already stopped")
+        Enum.empty?(running_operators) ->
+          put_flash(socket, :info, "All operators are already stopped")
 
         Enum.empty?(failures) ->
           socket
-          |> put_flash(:info, "Stopped #{length(successes)} watcher(s)")
+          |> put_flash(:info, "Stopped #{length(successes)} operator(s)")
           |> refresh_data()
 
         true ->
@@ -416,7 +414,7 @@ defmodule BeamlensWeb.DashboardLive do
 
       <.source_sidebar
         selected_source={@selected_source}
-        watchers={@watchers}
+        operators={@operators}
         coordinator_status={@coordinator_status}
         alert_count={@alert_counts.total}
         insight_count={length(@insights)}
@@ -664,9 +662,11 @@ defmodule BeamlensWeb.DashboardLive do
   defp panel_title(:alerts), do: "Alerts"
   defp panel_title(:insights), do: "Insights"
   defp panel_title(:coordinator), do: "Coordinator"
-  defp panel_title(watcher) when is_atom(watcher), do: "#{format_watcher_name(watcher)} Activity"
 
-  defp format_watcher_name(name) when is_atom(name) do
+  defp panel_title(operator) when is_atom(operator),
+    do: "#{format_operator_name(operator)} Activity"
+
+  defp format_operator_name(name) when is_atom(name) do
     name |> Atom.to_string() |> String.capitalize()
   end
 
@@ -691,29 +691,29 @@ defmodule BeamlensWeb.DashboardLive do
   defp source_to_string(:alerts), do: "alerts"
   defp source_to_string(:insights), do: "insights"
   defp source_to_string(:coordinator), do: "coordinator"
-  defp source_to_string(watcher) when is_atom(watcher), do: Atom.to_string(watcher)
+  defp source_to_string(operator) when is_atom(operator), do: Atom.to_string(operator)
 
   defp type_to_string(nil), do: nil
   defp type_to_string(type) when is_atom(type), do: Atom.to_string(type)
 
-  defp parse_source_param(nil, _watchers), do: :all
-  defp parse_source_param("all", _watchers), do: :all
-  defp parse_source_param("alerts", _watchers), do: :alerts
-  defp parse_source_param("insights", _watchers), do: :insights
-  defp parse_source_param("coordinator", _watchers), do: :coordinator
+  defp parse_source_param(nil, _operators), do: :all
+  defp parse_source_param("all", _operators), do: :all
+  defp parse_source_param("alerts", _operators), do: :alerts
+  defp parse_source_param("insights", _operators), do: :insights
+  defp parse_source_param("coordinator", _operators), do: :coordinator
 
-  defp parse_source_param(source, watchers) do
-    watcher_names = Enum.map(watchers, & &1.watcher)
+  defp parse_source_param(source, operators) do
+    operator_names = Enum.map(operators, & &1.operator)
 
     try do
       atom = String.to_existing_atom(source)
-      if atom in watcher_names, do: atom, else: :all
+      if atom in operator_names, do: atom, else: :all
     rescue
       ArgumentError -> :all
     end
   end
 
-  defp parse_source_string(source, watchers), do: parse_source_param(source, watchers)
+  defp parse_source_string(source, operators), do: parse_source_param(source, operators)
 
   defp parse_type_param(nil), do: nil
 
@@ -753,8 +753,8 @@ defmodule BeamlensWeb.DashboardLive do
     Enum.filter(events, &(&1.event_type == :insight_produced))
   end
 
-  defp filter_by_source(events, watcher) when is_atom(watcher) do
-    Enum.filter(events, &(&1.source == watcher))
+  defp filter_by_source(events, operator) when is_atom(operator) do
+    Enum.filter(events, &(&1.source == operator))
   end
 
   defp filter_by_type(events, nil), do: events
@@ -765,14 +765,14 @@ defmodule BeamlensWeb.DashboardLive do
   defp refresh_data(socket) do
     node = socket.assigns.selected_node
 
-    watchers = fetch_watchers(node)
+    operators = fetch_operators(node)
     alerts = fetch_alerts(node)
     alert_counts = fetch_alert_counts(node)
     insights = fetch_insights(node)
     coordinator_status = fetch_coordinator_status(node)
 
     socket
-    |> assign(:watchers, watchers)
+    |> assign(:operators, operators)
     |> assign(:alerts, alerts)
     |> assign(:alert_counts, alert_counts)
     |> assign(:insights, insights)
@@ -808,37 +808,32 @@ defmodule BeamlensWeb.DashboardLive do
 
   # RPC-based data fetching
 
-  defp fetch_watchers(node) do
-    # Get running watchers
-    running_watchers =
+  defp fetch_operators(node) do
+    running_operators =
       case rpc_call(node, Beamlens.Operator.Supervisor, :list_operators, []) do
-        {:ok, watchers} -> watchers
+        {:ok, operators} -> operators
         {:error, _reason} -> []
       end
 
-    # Get all configured operator names (builtin + custom)
     configured_operators =
       case rpc_call(node, Beamlens.Operator.Supervisor, :configured_operators, []) do
         {:ok, operators} -> operators
         {:error, _reason} -> []
       end
 
-    # Create a map of running watchers by name
-    running_map = Map.new(running_watchers, fn w -> {w.watcher, w} end)
+    running_map = Map.new(running_operators, fn op -> {op.operator, op} end)
 
-    # Merge: show all configured operators, with running status if available
     configured_operators
     |> Enum.map(fn operator ->
       case Map.get(running_map, operator) do
         nil ->
-          # Not running - create a stopped entry
-          %{watcher: operator, name: operator, state: :healthy, running: false}
+          %{operator: operator, name: operator, state: :healthy, running: false}
 
-        watcher ->
-          watcher
+        op ->
+          op
       end
     end)
-    |> Enum.sort_by(& &1.watcher)
+    |> Enum.sort_by(& &1.operator)
   end
 
   defp fetch_alerts(node) do
@@ -909,8 +904,8 @@ defmodule BeamlensWeb.DashboardLive do
     handler_id = "beamlens-dashboard-#{inspect(pid)}"
 
     events = [
-      [:beamlens, :watcher, :state_change],
-      [:beamlens, :watcher, :alert_fired],
+      [:beamlens, :operator, :state_change],
+      [:beamlens, :operator, :alert_fired],
       [:beamlens, :coordinator, :insight_produced],
       [:beamlens, :coordinator, :alert_received]
     ]
