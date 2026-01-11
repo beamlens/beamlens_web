@@ -53,15 +53,17 @@ defmodule BeamlensWeb.SidebarComponents do
             @selected_source == :all && "btn-active text-primary"
           ]}
         >
-          <span class="text-sm w-5 text-center shrink-0">○</span>
-          <span class="flex-1 text-left truncate">All Sources</span>
+          <span class="flex-1 text-left truncate">All Activity</span>
         </button>
       </div>
 
       <div class="px-2 mb-4">
-        <h2 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider px-3 py-2 mb-1">
-          Watchers
-        </h2>
+        <div class="flex items-center justify-between px-3 py-2 mb-1">
+          <h2 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider">
+            Watchers
+          </h2>
+          <.all_watchers_controls watchers={@watchers} />
+        </div>
         <%= for watcher <- @watchers do %>
           <.watcher_sidebar_item
             watcher={watcher}
@@ -130,24 +132,35 @@ defmodule BeamlensWeb.SidebarComponents do
 
   def watcher_sidebar_item(assigns) do
     ~H"""
-    <button
-      type="button"
-      phx-click="select_source"
-      phx-value-source={@watcher.watcher}
-      class={[
-        "btn btn-ghost btn-sm justify-start w-full gap-2",
-        @selected && "btn-active text-primary"
-      ]}
-    >
-      <span class={[
-        "w-2 h-2 rounded-full shrink-0",
-        status_dot_class(@watcher.state)
-      ]}></span>
-      <span class="flex-1 text-left truncate"><%= format_watcher_name(@watcher.watcher) %></span>
-      <span class={["badge badge-sm", state_badge_class(@watcher.state)]}>
-        <%= format_state(@watcher.state) %>
-      </span>
-    </button>
+    <div class="flex items-center gap-1">
+      <button
+        type="button"
+        phx-click={if @watcher.running, do: "stop_watcher", else: "restart_watcher"}
+        phx-value-watcher={@watcher.watcher}
+        class={[
+          "btn btn-ghost btn-xs btn-square",
+          if(@watcher.running, do: "text-success hover:text-success", else: "text-error hover:text-error")
+        ]}
+        title={if @watcher.running, do: "Click to stop #{format_watcher_name(@watcher.watcher)}", else: "Click to start #{format_watcher_name(@watcher.watcher)}"}
+      >
+        <%= if @watcher.running do %>
+          <.icon name="hero-stop-circle" class="w-4 h-4" />
+        <% else %>
+          <.icon name="hero-play-circle" class="w-4 h-4" />
+        <% end %>
+      </button>
+      <button
+        type="button"
+        phx-click="select_source"
+        phx-value-source={@watcher.watcher}
+        class={[
+          "btn btn-ghost btn-sm justify-start flex-1 gap-2",
+          @selected && "btn-active text-primary"
+        ]}
+      >
+        <span class="flex-1 text-left truncate"><%= format_watcher_name(@watcher.watcher) %></span>
+      </button>
+    </div>
     """
   end
 
@@ -159,24 +172,34 @@ defmodule BeamlensWeb.SidebarComponents do
 
   def coordinator_sidebar_item(assigns) do
     ~H"""
-    <button
-      type="button"
-      phx-click="select_source"
-      phx-value-source="coordinator"
-      class={[
-        "btn btn-ghost btn-sm justify-start w-full gap-2",
-        @selected && "btn-active text-primary"
-      ]}
-    >
-      <span class={[
-        "w-2 h-2 rounded-full shrink-0",
-        if(@status.running, do: "bg-success", else: "bg-error")
-      ]}></span>
-      <span class="flex-1 text-left truncate">Status</span>
-      <span class="text-xs text-base-content/50">
-        <%= if @status.running, do: "running", else: "stopped" %>
-      </span>
-    </button>
+    <div class="flex items-center gap-1">
+      <button
+        type="button"
+        phx-click={if @status.running, do: "stop_coordinator", else: "start_coordinator"}
+        class={[
+          "btn btn-ghost btn-xs btn-square",
+          if(@status.running, do: "text-success hover:text-success", else: "text-error hover:text-error")
+        ]}
+        title={if @status.running, do: "Click to stop coordinator", else: "Click to start coordinator"}
+      >
+        <%= if @status.running do %>
+          <.icon name="hero-stop-circle" class="w-4 h-4" />
+        <% else %>
+          <.icon name="hero-play-circle" class="w-4 h-4" />
+        <% end %>
+      </button>
+      <button
+        type="button"
+        phx-click="select_source"
+        phx-value-source="coordinator"
+        class={[
+          "btn btn-ghost btn-sm justify-start flex-1 gap-2",
+          @selected && "btn-active text-primary"
+        ]}
+      >
+        <span class="flex-1 text-left truncate">Status</span>
+      </button>
+    </div>
     <div class="flex gap-4 px-3 py-1 pl-8">
       <div class="flex items-baseline gap-1">
         <span class="text-sm font-semibold text-base-content"><%= @status.alert_count || 0 %></span>
@@ -190,6 +213,59 @@ defmodule BeamlensWeb.SidebarComponents do
     """
   end
 
+  @doc """
+  Renders start/stop all controls for watchers.
+  """
+  attr(:watchers, :list, required: true)
+
+  def all_watchers_controls(assigns) do
+    all_running = Enum.all?(assigns.watchers, & &1.running)
+    any_running = Enum.any?(assigns.watchers, & &1.running)
+    assigns = assign(assigns, all_running: all_running, any_running: any_running)
+
+    ~H"""
+    <%= cond do %>
+      <% @all_running -> %>
+        <button
+          type="button"
+          phx-click="stop_all_watchers"
+          class="btn btn-ghost btn-xs btn-square text-success hover:text-success"
+          title="Click to stop all watchers"
+        >
+          <.icon name="hero-stop-circle" class="w-4 h-4" />
+        </button>
+      <% @any_running -> %>
+        <div class="flex">
+          <button
+            type="button"
+            phx-click="start_all_watchers"
+            class="btn btn-ghost btn-xs btn-square text-error hover:text-error"
+            title="Click to start all watchers"
+          >
+            <.icon name="hero-play-circle" class="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            phx-click="stop_all_watchers"
+            class="btn btn-ghost btn-xs btn-square text-success hover:text-success"
+            title="Click to stop all watchers"
+          >
+            <.icon name="hero-stop-circle" class="w-4 h-4" />
+          </button>
+        </div>
+      <% true -> %>
+        <button
+          type="button"
+          phx-click="start_all_watchers"
+          class="btn btn-ghost btn-xs btn-square text-error hover:text-error"
+          title="Click to start all watchers"
+        >
+          <.icon name="hero-play-circle" class="w-4 h-4" />
+        </button>
+    <% end %>
+    """
+  end
+
   # Private helper functions
 
   defp format_watcher_name(name) when is_atom(name) do
@@ -199,22 +275,4 @@ defmodule BeamlensWeb.SidebarComponents do
   end
 
   defp format_watcher_name(name), do: to_string(name)
-
-  defp status_dot_class(:healthy), do: "bg-success"
-  defp status_dot_class(:observing), do: "bg-info"
-  defp status_dot_class(:warning), do: "bg-warning"
-  defp status_dot_class(:critical), do: "bg-error"
-  defp status_dot_class(_), do: "bg-neutral"
-
-  defp state_badge_class(:healthy), do: "badge-success"
-  defp state_badge_class(:observing), do: "badge-info"
-  defp state_badge_class(:warning), do: "badge-warning"
-  defp state_badge_class(:critical), do: "badge-error"
-  defp state_badge_class(_), do: "badge-neutral"
-
-  defp format_state(state) when is_atom(state) do
-    state |> Atom.to_string() |> String.upcase()
-  end
-
-  defp format_state(state), do: to_string(state) |> String.upcase()
 end

@@ -163,6 +163,181 @@ defmodule BeamlensWeb.DashboardLive do
     {:noreply, push_event(socket, "copy", %{text: formatted, copyId: nil})}
   end
 
+  def handle_event("restart_watcher", %{"watcher" => watcher_str}, socket) do
+    watcher = String.to_existing_atom(watcher_str)
+    node = socket.assigns.selected_node
+
+    # Stop and restart the watcher
+    _ = rpc_call(node, Beamlens.Operator.Supervisor, :stop_operator, [watcher])
+    result = rpc_call(node, Beamlens.Operator.Supervisor, :start_operator, [watcher])
+
+    socket =
+      case result do
+        {:ok, {:ok, _pid}} ->
+          socket
+          |> put_flash(:info, "Watcher #{watcher} restarted successfully")
+          |> refresh_data()
+
+        {:ok, {:error, reason}} ->
+          put_flash(socket, :error, "Failed to restart #{watcher}: #{inspect(reason)}")
+
+        {:error, reason} ->
+          put_flash(socket, :error, "RPC error restarting #{watcher}: #{inspect(reason)}")
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("stop_watcher", %{"watcher" => watcher_str}, socket) do
+    watcher = String.to_existing_atom(watcher_str)
+    node = socket.assigns.selected_node
+
+    result = rpc_call(node, Beamlens.Operator.Supervisor, :stop_operator, [watcher])
+
+    socket =
+      case result do
+        {:ok, :ok} ->
+          socket
+          |> put_flash(:info, "Watcher #{watcher} stopped")
+          |> refresh_data()
+
+        {:ok, {:error, :not_found}} ->
+          put_flash(socket, :error, "Watcher #{watcher} not found")
+
+        {:error, reason} ->
+          put_flash(socket, :error, "RPC error stopping #{watcher}: #{inspect(reason)}")
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("start_all_watchers", _params, socket) do
+    node = socket.assigns.selected_node
+    watchers = socket.assigns.watchers
+
+    stopped_watchers = Enum.reject(watchers, & &1.running)
+
+    results =
+      Enum.map(stopped_watchers, fn watcher ->
+        {watcher.watcher,
+         rpc_call(node, Beamlens.Operator.Supervisor, :start_operator, [watcher.watcher])}
+      end)
+
+    {successes, failures} =
+      Enum.split_with(results, fn
+        {_, {:ok, {:ok, _}}} -> true
+        _ -> false
+      end)
+
+    socket =
+      cond do
+        Enum.empty?(stopped_watchers) ->
+          put_flash(socket, :info, "All watchers are already running")
+
+        Enum.empty?(failures) ->
+          socket
+          |> put_flash(:info, "Started #{length(successes)} watcher(s)")
+          |> refresh_data()
+
+        true ->
+          failed_names = Enum.map(failures, fn {name, _} -> name end) |> Enum.join(", ")
+
+          socket
+          |> put_flash(:error, "Failed to start: #{failed_names}")
+          |> refresh_data()
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("stop_all_watchers", _params, socket) do
+    node = socket.assigns.selected_node
+    watchers = socket.assigns.watchers
+
+    running_watchers = Enum.filter(watchers, & &1.running)
+
+    results =
+      Enum.map(running_watchers, fn watcher ->
+        {watcher.watcher,
+         rpc_call(node, Beamlens.Operator.Supervisor, :stop_operator, [watcher.watcher])}
+      end)
+
+    {successes, failures} =
+      Enum.split_with(results, fn
+        {_, {:ok, :ok}} -> true
+        _ -> false
+      end)
+
+    socket =
+      cond do
+        Enum.empty?(running_watchers) ->
+          put_flash(socket, :info, "All watchers are already stopped")
+
+        Enum.empty?(failures) ->
+          socket
+          |> put_flash(:info, "Stopped #{length(successes)} watcher(s)")
+          |> refresh_data()
+
+        true ->
+          failed_names = Enum.map(failures, fn {name, _} -> name end) |> Enum.join(", ")
+
+          socket
+          |> put_flash(:error, "Failed to stop: #{failed_names}")
+          |> refresh_data()
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("start_coordinator", _params, socket) do
+    node = socket.assigns.selected_node
+
+    result =
+      rpc_call(node, Supervisor, :restart_child, [Beamlens.Supervisor, Beamlens.Coordinator])
+
+    socket =
+      case result do
+        {:ok, {:ok, _pid}} ->
+          socket
+          |> put_flash(:info, "Coordinator started")
+          |> refresh_data()
+
+        {:ok, {:error, :running}} ->
+          put_flash(socket, :info, "Coordinator is already running")
+
+        {:ok, {:error, reason}} ->
+          put_flash(socket, :error, "Failed to start coordinator: #{inspect(reason)}")
+
+        {:error, reason} ->
+          put_flash(socket, :error, "RPC error starting coordinator: #{inspect(reason)}")
+      end
+
+    {:noreply, socket}
+  end
+
+  def handle_event("stop_coordinator", _params, socket) do
+    node = socket.assigns.selected_node
+
+    result =
+      rpc_call(node, Supervisor, :terminate_child, [Beamlens.Supervisor, Beamlens.Coordinator])
+
+    socket =
+      case result do
+        {:ok, :ok} ->
+          socket
+          |> put_flash(:info, "Coordinator stopped")
+          |> refresh_data()
+
+        {:ok, {:error, :not_found}} ->
+          put_flash(socket, :error, "Coordinator not found")
+
+        {:error, reason} ->
+          put_flash(socket, :error, "RPC error stopping coordinator: #{inspect(reason)}")
+      end
+
+    {:noreply, socket}
+  end
+
   @impl true
   def handle_info(:refresh, socket) do
     schedule_refresh()
@@ -460,11 +635,18 @@ defmodule BeamlensWeb.DashboardLive do
       {:iteration_start, "Iterations"},
       {:state_change, "State Changes"},
       {:alert_fired, "Alerts Fired"},
-      {:take_snapshot, "Snapshots"},
+      {:get_alerts, "Get Alerts"},
+      {:take_snapshot, "Take Snapshot"},
+      {:get_snapshot, "Get Snapshot"},
+      {:get_snapshots, "Get Snapshots"},
+      {:execute_start, "Execute Start"},
+      {:execute_complete, "Execute Complete"},
+      {:execute_error, "Execute Error"},
       {:wait, "Wait"},
       {:think, "Think"},
       {:llm_error, "LLM Errors"},
       {:alert_received, "Alerts Received"},
+      {:update_alert_statuses, "Update Alert Statuses"},
       {:insight_produced, "Insights"},
       {:done, "Done"}
     ]
@@ -627,10 +809,36 @@ defmodule BeamlensWeb.DashboardLive do
   # RPC-based data fetching
 
   defp fetch_watchers(node) do
-    case rpc_call(node, Beamlens.Watcher.Supervisor, :list_watchers, []) do
-      {:ok, watchers} -> watchers
-      {:error, _reason} -> []
-    end
+    # Get running watchers
+    running_watchers =
+      case rpc_call(node, Beamlens.Operator.Supervisor, :list_operators, []) do
+        {:ok, watchers} -> watchers
+        {:error, _reason} -> []
+      end
+
+    # Get builtin domain names
+    builtin_domains =
+      case rpc_call(node, Beamlens.Operator.Supervisor, :builtin_domains, []) do
+        {:ok, domains} -> domains
+        {:error, _reason} -> []
+      end
+
+    # Create a map of running watchers by name
+    running_map = Map.new(running_watchers, fn w -> {w.watcher, w} end)
+
+    # Merge: show all builtin domains, with running status if available
+    builtin_domains
+    |> Enum.map(fn domain ->
+      case Map.get(running_map, domain) do
+        nil ->
+          # Not running - create a stopped entry
+          %{watcher: domain, name: domain, state: :healthy, running: false}
+
+        watcher ->
+          watcher
+      end
+    end)
+    |> Enum.sort_by(& &1.watcher)
   end
 
   defp fetch_alerts(node) do
@@ -655,9 +863,20 @@ defmodule BeamlensWeb.DashboardLive do
   end
 
   defp fetch_coordinator_status(node) do
+    # Check if the coordinator process exists
+    process_running =
+      case rpc_call(node, Process, :whereis, [Beamlens.Coordinator]) do
+        {:ok, pid} when is_pid(pid) -> true
+        _ -> false
+      end
+
     case rpc_call(node, Beamlens.Coordinator, :status, []) do
-      {:ok, status} -> status
-      {:error, _reason} -> %{running: false, alert_count: 0, unread_count: 0, iteration: 0}
+      {:ok, status} ->
+        # Override running to reflect process existence, not loop activity
+        Map.put(status, :running, process_running)
+
+      {:error, _reason} ->
+        %{running: false, alert_count: 0, unread_count: 0, iteration: 0}
     end
   end
 

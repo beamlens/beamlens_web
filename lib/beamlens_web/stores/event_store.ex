@@ -1,6 +1,6 @@
 defmodule BeamlensWeb.EventStore do
   @moduledoc """
-  ETS-based store for telemetry events from BeamLens watchers and coordinator.
+  ETS-based store for telemetry events from BeamLens operators and coordinator.
 
   Provides an audit trail of system activity with a ring buffer to prevent
   unbounded memory growth. Subscribes to key telemetry events and stores
@@ -14,21 +14,31 @@ defmodule BeamlensWeb.EventStore do
   @telemetry_handler_id "beamlens-web-event-store"
 
   # Events to capture
-  @watcher_events [
-    [:beamlens, :watcher, :iteration_start],
-    [:beamlens, :watcher, :state_change],
-    [:beamlens, :watcher, :alert_fired],
-    [:beamlens, :watcher, :take_snapshot],
-    [:beamlens, :watcher, :wait],
-    [:beamlens, :watcher, :think],
-    [:beamlens, :watcher, :llm_error]
+  @operator_events [
+    [:beamlens, :operator, :iteration_start],
+    [:beamlens, :operator, :state_change],
+    [:beamlens, :operator, :alert_fired],
+    [:beamlens, :operator, :get_alerts],
+    [:beamlens, :operator, :take_snapshot],
+    [:beamlens, :operator, :get_snapshot],
+    [:beamlens, :operator, :get_snapshots],
+    [:beamlens, :operator, :execute_start],
+    [:beamlens, :operator, :execute_complete],
+    [:beamlens, :operator, :execute_error],
+    [:beamlens, :operator, :wait],
+    [:beamlens, :operator, :think],
+    [:beamlens, :operator, :llm_error]
   ]
 
   @coordinator_events [
     [:beamlens, :coordinator, :alert_received],
     [:beamlens, :coordinator, :iteration_start],
+    [:beamlens, :coordinator, :get_alerts],
+    [:beamlens, :coordinator, :update_alert_statuses],
     [:beamlens, :coordinator, :insight_produced],
-    [:beamlens, :coordinator, :done]
+    [:beamlens, :coordinator, :done],
+    [:beamlens, :coordinator, :think],
+    [:beamlens, :coordinator, :llm_error]
   ]
 
   # Client API
@@ -73,7 +83,7 @@ defmodule BeamlensWeb.EventStore do
     table = :ets.new(@table_name, [:named_table, :set, :public, read_concurrency: true])
 
     # Subscribe to all tracked events
-    all_events = @watcher_events ++ @coordinator_events
+    all_events = @operator_events ++ @coordinator_events
 
     :telemetry.attach_many(
       @telemetry_handler_id,
@@ -115,52 +125,84 @@ defmodule BeamlensWeb.EventStore do
 
   defp timestamp_from_measurements(_), do: DateTime.utc_now()
 
-  defp event_type([:beamlens, :watcher, type]), do: type
+  defp event_type([:beamlens, :operator, type]), do: type
   defp event_type([:beamlens, :coordinator, type]), do: type
   defp event_type(_), do: :unknown
 
-  defp extract_source([:beamlens, :watcher, _], metadata),
-    do: Map.get(metadata, :watcher, :unknown)
+  defp extract_source([:beamlens, :operator, _], metadata),
+    do: Map.get(metadata, :operator, :unknown)
 
   defp extract_source([:beamlens, :coordinator, _], _metadata), do: :coordinator
   defp extract_source(_, _), do: :unknown
 
   # Extract only the relevant metadata for display
-  defp sanitize_metadata([:beamlens, :watcher, :iteration_start], meta) do
-    %{iteration: meta[:iteration], watcher_state: meta[:watcher_state]}
+  defp sanitize_metadata([:beamlens, :operator, :iteration_start], meta) do
+    %{iteration: meta[:iteration], operator_state: meta[:operator_state]}
   end
 
-  defp sanitize_metadata([:beamlens, :watcher, :state_change], meta) do
+  defp sanitize_metadata([:beamlens, :operator, :state_change], meta) do
     %{from: meta[:from], to: meta[:to], reason: meta[:reason]}
   end
 
-  defp sanitize_metadata([:beamlens, :watcher, :alert_fired], meta) do
+  defp sanitize_metadata([:beamlens, :operator, :alert_fired], meta) do
     alert = meta[:alert]
     %{alert_id: alert.id, severity: alert.severity, anomaly_type: alert.anomaly_type}
   end
 
-  defp sanitize_metadata([:beamlens, :watcher, :take_snapshot], meta) do
+  defp sanitize_metadata([:beamlens, :operator, :take_snapshot], meta) do
     %{snapshot_id: meta[:snapshot_id]}
   end
 
-  defp sanitize_metadata([:beamlens, :watcher, :wait], meta) do
+  defp sanitize_metadata([:beamlens, :operator, :get_alerts], meta) do
+    %{count: meta[:count]}
+  end
+
+  defp sanitize_metadata([:beamlens, :operator, :get_snapshot], meta) do
+    %{snapshot_id: meta[:snapshot_id]}
+  end
+
+  defp sanitize_metadata([:beamlens, :operator, :get_snapshots], meta) do
+    %{count: meta[:count]}
+  end
+
+  defp sanitize_metadata([:beamlens, :operator, :execute_start], _meta) do
+    %{}
+  end
+
+  defp sanitize_metadata([:beamlens, :operator, :execute_complete], _meta) do
+    %{}
+  end
+
+  defp sanitize_metadata([:beamlens, :operator, :execute_error], meta) do
+    %{reason: inspect(meta[:reason])}
+  end
+
+  defp sanitize_metadata([:beamlens, :operator, :wait], meta) do
     %{ms: meta[:ms]}
   end
 
-  defp sanitize_metadata([:beamlens, :watcher, :think], meta) do
+  defp sanitize_metadata([:beamlens, :operator, :think], meta) do
     %{thought: meta[:thought]}
   end
 
-  defp sanitize_metadata([:beamlens, :watcher, :llm_error], meta) do
+  defp sanitize_metadata([:beamlens, :operator, :llm_error], meta) do
     %{reason: inspect(meta[:reason])}
   end
 
   defp sanitize_metadata([:beamlens, :coordinator, :alert_received], meta) do
-    %{alert_id: meta[:alert_id], watcher: meta[:watcher]}
+    %{alert_id: meta[:alert_id], operator: meta[:operator]}
   end
 
   defp sanitize_metadata([:beamlens, :coordinator, :iteration_start], meta) do
     %{iteration: meta[:iteration], alert_count: meta[:alert_count]}
+  end
+
+  defp sanitize_metadata([:beamlens, :coordinator, :get_alerts], meta) do
+    %{count: meta[:count]}
+  end
+
+  defp sanitize_metadata([:beamlens, :coordinator, :update_alert_statuses], meta) do
+    %{count: meta[:count], status: meta[:status]}
   end
 
   defp sanitize_metadata([:beamlens, :coordinator, :insight_produced], meta) do
@@ -170,6 +212,14 @@ defmodule BeamlensWeb.EventStore do
 
   defp sanitize_metadata([:beamlens, :coordinator, :done], meta) do
     %{has_unread: meta[:has_unread]}
+  end
+
+  defp sanitize_metadata([:beamlens, :coordinator, :think], _meta) do
+    %{}
+  end
+
+  defp sanitize_metadata([:beamlens, :coordinator, :llm_error], meta) do
+    %{reason: inspect(meta[:reason])}
   end
 
   defp sanitize_metadata(_, _), do: %{}
