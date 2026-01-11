@@ -816,23 +816,23 @@ defmodule BeamlensWeb.DashboardLive do
         {:error, _reason} -> []
       end
 
-    # Get builtin domain names
-    builtin_domains =
-      case rpc_call(node, Beamlens.Operator.Supervisor, :builtin_domains, []) do
-        {:ok, domains} -> domains
+    # Get builtin skill names
+    builtin_skills =
+      case rpc_call(node, Beamlens.Operator.Supervisor, :builtin_skills, []) do
+        {:ok, skills} -> skills
         {:error, _reason} -> []
       end
 
     # Create a map of running watchers by name
     running_map = Map.new(running_watchers, fn w -> {w.watcher, w} end)
 
-    # Merge: show all builtin domains, with running status if available
-    builtin_domains
-    |> Enum.map(fn domain ->
-      case Map.get(running_map, domain) do
+    # Merge: show all builtin skills, with running status if available
+    builtin_skills
+    |> Enum.map(fn skill ->
+      case Map.get(running_map, skill) do
         nil ->
           # Not running - create a stopped entry
-          %{watcher: domain, name: domain, state: :healthy, running: false}
+          %{watcher: skill, name: skill, state: :healthy, running: false}
 
         watcher ->
           watcher
