@@ -51,16 +51,24 @@ defmodule BeamlensWeb.CoordinatorComponents do
 
   def insight_card(assigns) do
     ~H"""
-    <.card class="mb-4">
-      <div class="p-4 border-b border-base-300 flex items-center gap-3">
+    <.card class="mb-4 relative">
+      <div class="absolute top-2 right-2">
+        <.copy_all_button data={Map.from_struct(@insight)} />
+      </div>
+      <div class="p-4 border-b border-base-300 flex items-center gap-3 pr-10">
         <.badge variant={@insight.correlation_type}><%= @insight.correlation_type %></.badge>
         <.badge variant={@insight.confidence}>Confidence: <%= @insight.confidence %></.badge>
+        <span class="flex-1"></span>
+        <.copyable value={@insight.id} display={String.slice(@insight.id, 0..7) <> "..."} code={true} />
       </div>
       <div class="p-4">
-        <p class="text-base mb-3"><%= @insight.summary %></p>
+        <p class="text-base mb-3">
+          <.copyable value={@insight.summary} code={false} class="text-base-content" />
+        </p>
         <%= if @insight.root_cause_hypothesis do %>
           <div class="bg-base-100 p-3 rounded text-sm text-base-content/70 mb-3">
-            <strong>Root Cause Hypothesis:</strong> <%= @insight.root_cause_hypothesis %>
+            <strong>Root Cause Hypothesis:</strong>
+            <.copyable value={@insight.root_cause_hypothesis} code={false} class="text-base-content/70" />
           </div>
         <% end %>
         <div class="flex flex-wrap gap-3 text-sm text-base-content/70">

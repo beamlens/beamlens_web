@@ -92,3 +92,22 @@
   display: block;
 }
 
+/* Mobile sidebar/panel transitions */
+.-translate-x-full {
+  transform: translateX(-100%);
+}
+
+.translate-x-full {
+  transform: translateX(100%);
+}
+
+.translate-x-0 {
+  transform: translateX(0);
+}
+
+@media (min-width: 768px) {
+  .md\:translate-x-0 {
+    transform: translateX(0);
+  }
+}
+

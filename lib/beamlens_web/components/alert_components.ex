@@ -13,17 +13,24 @@ defmodule BeamlensWeb.AlertComponents do
 
   def alert_card(assigns) do
     ~H"""
-    <.card class="mb-4">
-      <div class="p-4 border-b border-base-300 flex items-center gap-3">
+    <.card class="mb-4 relative">
+      <div class="absolute top-2 right-2">
+        <.copy_all_button data={Map.from_struct(@alert)} />
+      </div>
+      <div class="p-4 border-b border-base-300 flex items-center gap-3 pr-10">
         <.badge variant={@alert.severity}><%= @alert.severity %></.badge>
         <.badge variant={@alert.status}><%= @alert.status %></.badge>
         <span class="font-medium text-base-content"><%= format_watcher_name(@alert.watcher) %></span>
+        <span class="flex-1"></span>
+        <.copyable value={@alert.id} display={String.slice(@alert.id, 0..7) <> "..."} code={true} />
       </div>
       <div class="p-4">
-        <p class="text-base mb-3"><%= @alert.summary %></p>
+        <p class="text-base mb-3">
+          <.copyable value={@alert.summary} code={false} class="text-base-content" />
+        </p>
         <div class="flex flex-wrap gap-3 text-sm text-base-content/70">
-          <span>Type: <%= @alert.anomaly_type %></span>
-          <span class="font-mono text-xs"><%= format_datetime(@alert.detected_at) %></span>
+          <span>Type: <.copyable value={to_string(@alert.anomaly_type)} code={false} class="text-base-content/70" /></span>
+          <span class="font-mono text-xs"><.timestamp value={@alert.detected_at} format={:datetime} /></span>
         </div>
       </div>
     </.card>

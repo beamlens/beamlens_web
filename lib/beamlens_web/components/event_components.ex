@@ -5,6 +5,7 @@ defmodule BeamlensWeb.EventComponents do
 
   use Phoenix.Component
 
+  import BeamlensWeb.CoreComponents
   import BeamlensWeb.Icons
 
   @doc """
@@ -17,7 +18,7 @@ defmodule BeamlensWeb.EventComponents do
 
   def event_list(assigns) do
     ~H"""
-    <div class="bg-base-200 border border-base-300 rounded-lg max-h-[600px] overflow-y-auto">
+    <div class="bg-base-200 border border-base-300 rounded-lg flex-1 min-h-0 overflow-y-auto">
       <%= if Enum.empty?(@events) do %>
         <div class="text-center py-12 px-4 text-base-content/50">
           <.icon name="hero-inbox" class="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -51,7 +52,7 @@ defmodule BeamlensWeb.EventComponents do
     ]}>
       <div
         class={[
-          "flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer transition-colors hover:bg-base-300/50",
+          "group flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 text-sm cursor-pointer transition-colors hover:bg-base-300/50 min-w-0",
           @expanded && "bg-base-300/50"
         ]}
         phx-click="select_event"
@@ -64,23 +65,26 @@ defmodule BeamlensWeb.EventComponents do
             <.icon name="hero-chevron-right" class="w-4 h-4" />
           <% end %>
         </span>
-        <span class="font-mono text-xs text-base-content/50 shrink-0">
-          <%= format_timestamp(@event.timestamp) %>
+        <span class="font-mono text-xs text-base-content/50 shrink-0 hidden sm:inline">
+          <.timestamp value={@event.timestamp} />
         </span>
-        <span class={["badge badge-sm font-mono min-w-[5rem] text-center", event_badge_class(@event.event_type)]}>
+        <span class={["badge badge-sm font-mono text-center shrink-0", event_badge_class(@event.event_type)]}>
           <%= format_event_type(@event.event_type) %>
         </span>
-        <span class="text-base-content/70 font-medium shrink-0 min-w-[6rem]">
+        <span class="text-base-content/70 font-medium shrink-0 hidden md:inline">
           <%= format_source(@event.source) %>
         </span>
-        <span class="text-base-content flex-1 truncate">
+        <span class="text-base-content flex-1 truncate min-w-0">
           <%= format_event_details(@event) %>
         </span>
         <%= if @event.trace_id do %>
-          <span class="font-mono text-xs text-base-content/50 shrink-0" title={"Trace: #{@event.trace_id}"}>
+          <span class="font-mono text-xs text-base-content/50 shrink-0 hidden lg:inline" title={"Trace: #{@event.trace_id}"}>
             <%= String.slice(@event.trace_id || "", 0..7) %>
           </span>
         <% end %>
+        <span class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+          <.copy_all_button data={@event} />
+        </span>
       </div>
       <%= if @expanded do %>
         <.event_detail event={@event} />
@@ -99,35 +103,39 @@ defmodule BeamlensWeb.EventComponents do
     <div class="px-4 py-4 pl-10 bg-base-100 border-t border-base-300">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <h4 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider mb-3 pb-2 border-b border-base-300">
+          <h3 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider mb-3 pb-2 border-b border-base-300">
             Event Info
-          </h4>
+          </h3>
           <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
             <dt class="text-base-content/50 font-medium">ID</dt>
-            <dd><code class="font-mono text-xs bg-base-200 px-1.5 py-0.5 rounded text-secondary"><%= @event.id %></code></dd>
+            <dd class="min-w-0"><div style="overflow: auto;"><.copyable value={@event.id} code={true} /></div></dd>
             <dt class="text-base-content/50 font-medium">Timestamp</dt>
-            <dd class="text-base-content"><%= format_full_timestamp(@event.timestamp) %></dd>
+            <dd class="min-w-0"><.timestamp value={@event.timestamp} format={:full} /></dd>
             <dt class="text-base-content/50 font-medium">Event Name</dt>
-            <dd><code class="font-mono text-xs bg-base-200 px-1.5 py-0.5 rounded text-secondary"><%= inspect(@event.event_name) %></code></dd>
+            <dd class="min-w-0"><div style="overflow: auto;"><.copyable value={inspect(@event.event_name)} code={true} /></div></dd>
             <dt class="text-base-content/50 font-medium">Type</dt>
-            <dd class="text-base-content"><%= format_event_type(@event.event_type) %></dd>
+            <dd class="min-w-0"><.copyable value={format_event_type(@event.event_type)} /></dd>
             <dt class="text-base-content/50 font-medium">Source</dt>
-            <dd class="text-base-content"><%= format_source(@event.source) %></dd>
+            <dd class="min-w-0"><.copyable value={format_source(@event.source)} /></dd>
             <%= if @event.trace_id do %>
               <dt class="text-base-content/50 font-medium">Trace ID</dt>
-              <dd><code class="font-mono text-xs bg-base-200 px-1.5 py-0.5 rounded text-secondary"><%= @event.trace_id %></code></dd>
+              <dd class="min-w-0"><div style="overflow: auto;"><.copyable value={@event.trace_id} code={true} /></div></dd>
             <% end %>
           </dl>
         </div>
         <div>
-          <h4 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider mb-3 pb-2 border-b border-base-300">
+          <h3 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider mb-3 pb-2 border-b border-base-300">
             Metadata
-          </h4>
+          </h3>
           <%= if @event.metadata && map_size(@event.metadata) > 0 do %>
             <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
               <%= for {key, value} <- @event.metadata do %>
                 <dt class="text-base-content/50 font-medium"><%= key %></dt>
-                <dd class="text-base-content break-words"><%= format_metadata_value(value) %></dd>
+                <dd class="text-base-content min-w-0">
+                  <div class="max-h-32" style="overflow: auto;">
+                    <.copyable value={format_metadata_value(value)} class="whitespace-pre" />
+                  </div>
+                </dd>
               <% end %>
             </dl>
           <% else %>
@@ -205,14 +213,6 @@ defmodule BeamlensWeb.EventComponents do
   end
 
   # Private helper functions
-
-  defp format_timestamp(datetime) do
-    Calendar.strftime(datetime, "%H:%M:%S")
-  end
-
-  defp format_full_timestamp(datetime) do
-    Calendar.strftime(datetime, "%Y-%m-%d %H:%M:%S.%f")
-  end
 
   defp format_metadata_value(value) when is_binary(value), do: value
   defp format_metadata_value(value) when is_atom(value), do: Atom.to_string(value)

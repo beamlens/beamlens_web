@@ -34,6 +34,8 @@ defmodule BeamlensWeb.DashboardLive do
      |> assign(:event_type_filter, nil)
      |> assign(:selected_event_id, nil)
      |> assign(:events_paused, false)
+     |> assign(:sidebar_open, false)
+     |> assign(:settings_open, false)
      |> assign(:selected_node, Node.self())
      |> assign(:available_nodes, get_nodes())
      |> refresh_data()}
@@ -57,6 +59,7 @@ defmodule BeamlensWeb.DashboardLive do
 
     {:noreply,
      socket
+     |> assign(:sidebar_open, false)
      |> push_patch(to: build_url(source_atom, socket.assigns.event_type_filter))}
   end
 
@@ -95,6 +98,22 @@ defmodule BeamlensWeb.DashboardLive do
     {:noreply, socket}
   end
 
+  def handle_event("toggle_sidebar", _params, socket) do
+    {:noreply, assign(socket, :sidebar_open, !socket.assigns.sidebar_open)}
+  end
+
+  def handle_event("close_sidebar", _params, socket) do
+    {:noreply, assign(socket, :sidebar_open, false)}
+  end
+
+  def handle_event("toggle_settings", _params, socket) do
+    {:noreply, assign(socket, :settings_open, !socket.assigns.settings_open)}
+  end
+
+  def handle_event("close_settings", _params, socket) do
+    {:noreply, assign(socket, :settings_open, false)}
+  end
+
   def handle_event("export_data", _params, socket) do
     node = socket.assigns.selected_node
 
@@ -114,6 +133,34 @@ defmodule BeamlensWeb.DashboardLive do
     filename = "beamlens-export-#{format_timestamp_for_file()}.json"
 
     {:noreply, push_event(socket, "download", %{content: json, filename: filename})}
+  end
+
+  def handle_event("copy_to_clipboard", %{"text" => text, "copy-id" => copy_id}, socket) do
+    {:noreply, push_event(socket, "copy", %{text: text, copyId: copy_id})}
+  end
+
+  def handle_event("copy_to_clipboard", %{"text" => text}, socket) do
+    {:noreply, push_event(socket, "copy", %{text: text, copyId: nil})}
+  end
+
+  def handle_event("copy_record", %{"data" => data, "copy-id" => copy_id}, socket) do
+    # Format JSON nicely for readability
+    formatted =
+      data
+      |> Jason.decode!()
+      |> Jason.encode!(pretty: true)
+
+    {:noreply, push_event(socket, "copy", %{text: formatted, copyId: copy_id})}
+  end
+
+  def handle_event("copy_record", %{"data" => data}, socket) do
+    # Format JSON nicely for readability
+    formatted =
+      data
+      |> Jason.decode!()
+      |> Jason.encode!(pretty: true)
+
+    {:noreply, push_event(socket, "copy", %{text: formatted, copyId: nil})}
   end
 
   @impl true
@@ -148,22 +195,46 @@ defmodule BeamlensWeb.DashboardLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="grid grid-cols-[220px_1fr] grid-rows-[auto_1fr] h-screen overflow-hidden">
-      <header class="col-span-2 bg-base-200 border-b border-base-300 px-6 py-4 flex items-center justify-between">
-        <h1 class="text-xl font-semibold flex items-center gap-2">
-          <.icon name="hero-viewfinder-circle" class="w-6 h-6 text-primary" />
-          BeamLens Dashboard
-        </h1>
-        <div class="flex items-center gap-4 text-sm text-base-content/70">
-          <.node_selector
-            selected_node={@selected_node}
-            available_nodes={@available_nodes}
-          />
-          <span>Last updated: <%= format_time(@last_updated) %></span>
-          <.theme_toggle />
-          <button type="button" phx-click="export_data" class="btn btn-ghost btn-sm gap-1">
-            <.icon name="hero-arrow-down-tray" class="w-4 h-4" />
-            Export
+    <div class="flex flex-col h-screen overflow-hidden md:grid md:grid-cols-[220px_1fr] md:grid-rows-[auto_1fr]">
+      <header class="md:col-span-2 bg-base-200 border-b border-base-300 px-4 py-3 md:px-6 md:py-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              phx-click="toggle_sidebar"
+              class="btn btn-ghost btn-sm btn-square md:hidden"
+              aria-label="Toggle sidebar"
+            >
+              <.icon name="hero-bars-3" class="w-5 h-5" />
+            </button>
+            <h1 class="text-lg md:text-xl font-semibold flex items-center gap-2">
+              <.icon name="hero-viewfinder-circle" class="w-5 h-5 md:w-6 md:h-6 text-primary" />
+              <span class="hidden sm:inline">BeamLens Dashboard</span>
+              <span class="sm:hidden">BeamLens</span>
+            </h1>
+          </div>
+          <%!-- Desktop header controls --%>
+          <div class="hidden md:flex items-center gap-4 text-sm text-base-content/70">
+            <.node_selector
+              selected_node={@selected_node}
+              available_nodes={@available_nodes}
+            />
+            <span class="hidden lg:inline">Last updated: <.timestamp value={@last_updated} /></span>
+            <.timezone_toggle />
+            <.theme_toggle />
+            <button type="button" phx-click="export_data" class="btn btn-ghost btn-sm gap-1">
+              <.icon name="hero-arrow-down-tray" class="w-4 h-4" />
+              Export
+            </button>
+          </div>
+          <%!-- Mobile settings button --%>
+          <button
+            type="button"
+            phx-click="toggle_settings"
+            class="btn btn-ghost btn-sm btn-square md:hidden"
+            aria-label="Open settings"
+          >
+            <.icon name="hero-cog-6-tooth" class="w-5 h-5" />
           </button>
         </div>
       </header>
@@ -174,9 +245,17 @@ defmodule BeamlensWeb.DashboardLive do
         coordinator_status={@coordinator_status}
         alert_count={@alert_counts.total}
         insight_count={length(@insights)}
+        mobile_open={@sidebar_open}
       />
 
-      <main class="overflow-y-auto p-6 bg-base-100">
+      <.settings_panel
+        open={@settings_open}
+        selected_node={@selected_node}
+        available_nodes={@available_nodes}
+        last_updated={@last_updated}
+      />
+
+      <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-base-100">
         <.main_panel
           selected_source={@selected_source}
           filtered_events={@filtered_events}
@@ -190,6 +269,111 @@ defmodule BeamlensWeb.DashboardLive do
         />
       </main>
     </div>
+    """
+  end
+
+  # Mobile settings panel (right drawer)
+  defp settings_panel(assigns) do
+    ~H"""
+    <%!-- Backdrop --%>
+    <div
+      class={[
+        "fixed inset-0 z-40 md:hidden",
+        if(@open, do: "block", else: "hidden")
+      ]}
+      phx-click="close_settings"
+    >
+      <div class="absolute inset-0 bg-black/50"></div>
+    </div>
+    <%!-- Panel --%>
+    <aside class={[
+      "fixed inset-y-0 right-0 z-50 w-72 bg-base-200 border-l border-base-300 overflow-y-auto py-3 transition-transform duration-200 ease-in-out md:hidden",
+      if(@open, do: "translate-x-0", else: "translate-x-full")
+    ]}>
+      <div class="flex items-center justify-between px-4 py-2 mb-4 border-b border-base-300">
+        <span class="text-sm font-semibold text-base-content">Settings</span>
+        <button
+          type="button"
+          phx-click="close_settings"
+          class="btn btn-ghost btn-sm btn-square"
+          aria-label="Close settings"
+        >
+          <.icon name="hero-x-mark" class="w-5 h-5" />
+        </button>
+      </div>
+
+      <div class="px-4 space-y-6">
+        <%!-- Node selector --%>
+        <div class="space-y-2">
+          <label class="text-xs font-semibold text-base-content/50 uppercase tracking-wider">Node</label>
+          <form phx-change="select_node">
+            <select name="node" class="select select-sm select-bordered w-full" aria-label="Select node">
+              <%= for node <- @available_nodes do %>
+                <option value={node} selected={@selected_node == node}>
+                  <%= format_node_name(node) %>
+                </option>
+              <% end %>
+            </select>
+          </form>
+        </div>
+
+        <%!-- Last updated --%>
+        <div class="space-y-2">
+          <label class="text-xs font-semibold text-base-content/50 uppercase tracking-wider">Last Updated</label>
+          <div class="text-sm text-base-content">
+            <.timestamp value={@last_updated} />
+          </div>
+        </div>
+
+        <%!-- Timezone toggle --%>
+        <div class="space-y-2">
+          <label class="text-xs font-semibold text-base-content/50 uppercase tracking-wider">Timezone</label>
+          <.timezone_toggle />
+        </div>
+
+        <%!-- Theme selection --%>
+        <div class="space-y-2">
+          <label class="text-xs font-semibold text-base-content/50 uppercase tracking-wider">Theme</label>
+          <div class="flex gap-2">
+            <button
+              type="button"
+              onclick="setTheme('light')"
+              class="btn btn-sm btn-ghost flex-1 gap-1"
+              aria-label="Light theme"
+            >
+              <.icon name="hero-sun" class="w-4 h-4" />
+              Light
+            </button>
+            <button
+              type="button"
+              onclick="setTheme('dark')"
+              class="btn btn-sm btn-ghost flex-1 gap-1"
+              aria-label="Dark theme"
+            >
+              <.icon name="hero-moon" class="w-4 h-4" />
+              Dark
+            </button>
+            <button
+              type="button"
+              onclick="setTheme('system')"
+              class="btn btn-sm btn-ghost flex-1 gap-1"
+              aria-label="System theme"
+            >
+              <.icon name="hero-computer-desktop" class="w-4 h-4" />
+              Auto
+            </button>
+          </div>
+        </div>
+
+        <%!-- Export button --%>
+        <div class="pt-4 border-t border-base-300">
+          <button type="button" phx-click="export_data" class="btn btn-sm btn-ghost w-full justify-start gap-2">
+            <.icon name="hero-arrow-down-tray" class="w-4 h-4" />
+            Export Data
+          </button>
+        </div>
+      </div>
+    </aside>
     """
   end
 
@@ -215,9 +399,9 @@ defmodule BeamlensWeb.DashboardLive do
 
   defp panel_header(assigns) do
     ~H"""
-    <div class="flex items-center justify-between gap-4 shrink-0">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 shrink-0">
       <h2 class="text-base font-semibold text-base-content"><%= panel_title(@selected_source) %></h2>
-      <div class="flex items-center gap-4">
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
         <.event_type_filter
           current_filter={@event_type_filter}
           selected_source={@selected_source}
@@ -243,9 +427,9 @@ defmodule BeamlensWeb.DashboardLive do
 
   defp event_type_filter(assigns) do
     ~H"""
-    <form phx-change="filter_events" class="flex items-center gap-2">
+    <form phx-change="filter_events" class="flex flex-wrap items-center gap-2">
       <label for="event-type-filter" class="text-sm text-base-content/70">Type:</label>
-      <select id="event-type-filter" name="type" class="select select-sm select-bordered">
+      <select id="event-type-filter" name="type" class="select select-sm select-bordered flex-1 min-w-0 sm:flex-none sm:w-auto">
         <option value="" selected={@current_filter == nil}>All Types</option>
         <%= for {value, label} <- type_options(@selected_source) do %>
           <option value={value} selected={@current_filter == value}><%= label %></option>
@@ -525,12 +709,6 @@ defmodule BeamlensWeb.DashboardLive do
   defp schedule_refresh do
     Process.send_after(self(), :refresh, @refresh_interval)
   end
-
-  defp format_time(%DateTime{} = dt) do
-    Calendar.strftime(dt, "%H:%M:%S")
-  end
-
-  defp format_time(_), do: "-"
 
   defp format_timestamp_for_file do
     DateTime.utc_now()

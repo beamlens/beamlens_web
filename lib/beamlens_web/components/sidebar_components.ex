@@ -15,10 +15,34 @@ defmodule BeamlensWeb.SidebarComponents do
   attr(:coordinator_status, :map, required: true)
   attr(:alert_count, :integer, default: 0)
   attr(:insight_count, :integer, default: 0)
+  attr(:mobile_open, :boolean, default: false)
 
   def source_sidebar(assigns) do
     ~H"""
-    <aside class="bg-base-200 border-r border-base-300 overflow-y-auto py-3">
+    <div
+      class={[
+        "fixed inset-0 z-40 md:hidden",
+        if(@mobile_open, do: "block", else: "hidden")
+      ]}
+      phx-click="close_sidebar"
+    >
+      <div class="absolute inset-0 bg-black/50"></div>
+    </div>
+    <aside class={[
+      "fixed inset-y-0 left-0 z-50 w-64 bg-base-200 border-r border-base-300 overflow-y-auto py-3 transition-transform duration-200 ease-in-out md:static md:translate-x-0 md:w-auto",
+      if(@mobile_open, do: "translate-x-0", else: "-translate-x-full")
+    ]}>
+      <div class="flex items-center justify-between px-4 py-2 mb-2 md:hidden">
+        <span class="text-sm font-semibold text-base-content">Navigation</span>
+        <button
+          type="button"
+          phx-click="close_sidebar"
+          class="btn btn-ghost btn-sm btn-square"
+          aria-label="Close sidebar"
+        >
+          <.icon name="hero-x-mark" class="w-5 h-5" />
+        </button>
+      </div>
       <div class="px-2 mb-4">
         <button
           type="button"
@@ -35,9 +59,9 @@ defmodule BeamlensWeb.SidebarComponents do
       </div>
 
       <div class="px-2 mb-4">
-        <h3 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider px-3 py-2 mb-1">
+        <h2 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider px-3 py-2 mb-1">
           Watchers
-        </h3>
+        </h2>
         <%= for watcher <- @watchers do %>
           <.watcher_sidebar_item
             watcher={watcher}
@@ -50,9 +74,9 @@ defmodule BeamlensWeb.SidebarComponents do
       </div>
 
       <div class="px-2 mb-4">
-        <h3 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider px-3 py-2 mb-1">
+        <h2 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider px-3 py-2 mb-1">
           Coordinator
-        </h3>
+        </h2>
         <.coordinator_sidebar_item
           status={@coordinator_status}
           selected={@selected_source == :coordinator}
@@ -60,9 +84,9 @@ defmodule BeamlensWeb.SidebarComponents do
       </div>
 
       <div class="px-2 mb-4">
-        <h3 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider px-3 py-2 mb-1">
+        <h2 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider px-3 py-2 mb-1">
           Quick Filters
-        </h3>
+        </h2>
         <button
           type="button"
           phx-click="select_source"
