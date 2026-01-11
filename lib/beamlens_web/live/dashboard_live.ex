@@ -809,31 +809,10 @@ defmodule BeamlensWeb.DashboardLive do
   # RPC-based data fetching
 
   defp fetch_operators(node) do
-    running_operators =
-      case rpc_call(node, Beamlens.Operator.Supervisor, :list_operators, []) do
-        {:ok, operators} -> operators
-        {:error, _reason} -> []
-      end
-
-    configured_operators =
-      case rpc_call(node, Beamlens.Operator.Supervisor, :configured_operators, []) do
-        {:ok, operators} -> operators
-        {:error, _reason} -> []
-      end
-
-    running_map = Map.new(running_operators, fn op -> {op.operator, op} end)
-
-    configured_operators
-    |> Enum.map(fn operator ->
-      case Map.get(running_map, operator) do
-        nil ->
-          %{operator: operator, name: operator, state: :healthy, running: false}
-
-        op ->
-          op
-      end
-    end)
-    |> Enum.sort_by(& &1.operator)
+    case rpc_call(node, Beamlens.Operator.Supervisor, :list_operators, []) do
+      {:ok, operators} -> Enum.sort_by(operators, & &1.operator)
+      {:error, _reason} -> []
+    end
   end
 
   defp fetch_alerts(node) do
