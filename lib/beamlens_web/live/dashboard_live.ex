@@ -381,9 +381,8 @@ defmodule BeamlensWeb.DashboardLive do
               <.icon name="hero-bars-3" class="w-5 h-5" />
             </button>
             <h1 class="text-lg md:text-xl font-semibold flex items-center gap-2">
-              <.icon name="hero-viewfinder-circle" class="w-5 h-5 md:w-6 md:h-6 text-primary" />
-              <span class="hidden sm:inline">BeamLens Dashboard</span>
-              <span class="sm:hidden">BeamLens</span>
+              <img src="/images/logo/icon-blue.png" alt="BeamLens" class="w-5 h-5 md:w-6 md:h-6" />
+              <span>beamlens</span>
             </h1>
           </div>
           <%!-- Desktop header controls --%>

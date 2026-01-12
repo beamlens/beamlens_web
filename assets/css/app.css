@@ -1,72 +1,216 @@
-@import "tailwindcss";
-@source "../../lib/**/*.ex";
-@source "../../lib/**/*.heex";
-@plugin "daisyui";
+/* See the Tailwind configuration guide for advanced usage
+   https://tailwindcss.com/docs/configuration */
 
-/* Warm Ember Dark Theme */
-[data-theme="warm-ember-dark"] {
-  --color-base-100: #0f1115;
-  --color-base-200: #1a1d23;
-  --color-base-300: #252930;
-  --color-base-content: #f3f4f6;
+@import "tailwindcss" source(none);
+@source "../css";
+@source "../js";
+@source "../../lib/beamlens_web";
 
-  --color-primary: #FD4F00;
-  --color-primary-content: #ffffff;
+/* beamlens "Electric Blue" Color System
+   Unified around hue 230 (vibrant blue) with cool neutral surfaces
+   Complementary accent: vibrant amber (hue ~75) for contrast */
+@theme {
+  /* Brand Blue - Unified hue 230 (vibrant blue) */
+  --color-brand: oklch(0.60 0.20 230);
+  --color-brand-hover: oklch(0.65 0.18 230);
+  --color-brand-muted: oklch(0.50 0.17 230);
 
-  --color-secondary: #14B8A6;
-  --color-secondary-content: #ffffff;
+  /* Gradient stops for logo recreation */
+  --color-brand-light: oklch(0.72 0.15 230);
+  --color-brand-dark: oklch(0.48 0.20 235);
 
-  --color-accent: #f59e0b;
-  --color-accent-content: #ffffff;
+  /* Accent Amber - Vibrant complementary color that pops */
+  --color-accent: oklch(0.75 0.18 75);
+  --color-accent-hover: oklch(0.80 0.17 75);
 
-  --color-neutral: #2d3139;
-  --color-neutral-content: #f3f4f6;
+  /* Semantic Colors - Harmonized with cool palette */
+  --color-success: oklch(0.72 0.17 145);
+  --color-warning: oklch(0.80 0.16 85);
+  --color-error: oklch(0.65 0.22 25);
 
-  --color-info: #06b6d4;
-  --color-info-content: #ffffff;
-  --color-success: #10b981;
-  --color-success-content: #ffffff;
-  --color-warning: #f59e0b;
-  --color-warning-content: #ffffff;
-  --color-error: #ef4444;
-  --color-error-content: #ffffff;
+  /* Font Families - Geist for modern technical aesthetic */
+  --font-sans: 'Geist', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'Geist Mono', 'JetBrains Mono', 'Fira Code', monospace;
 
-  --rounded-box: 0.5rem;
-  --rounded-btn: 0.375rem;
-  --rounded-badge: 0.25rem;
+  /* Surface colors for custom utilities (dark mode default) - blue undertones */
+  --color-surface: oklch(0.14 0.015 230);
+  --color-surface-alt: oklch(0.17 0.018 230);
+  --color-surface-elevated: oklch(0.21 0.020 230);
+  --color-surface-overlay: oklch(0.28 0.022 230);
+  --color-border: oklch(0.35 0.030 230);
+  --color-border-muted: oklch(0.28 0.025 230);
+  --color-text-primary: oklch(0.95 0.01 230);
+  --color-text-secondary: oklch(0.72 0.03 230);
+  --color-text-muted: oklch(0.55 0.03 230);
 }
 
-/* Warm Ember Light Theme */
-[data-theme="warm-ember-light"] {
-  --color-base-100: #fafaf9;
-  --color-base-200: #f5f5f4;
-  --color-base-300: #e7e5e4;
-  --color-base-content: #1c1917;
+/* daisyUI Tailwind Plugin */
+@plugin "daisyui";
 
-  --color-primary: #d94400;
-  --color-primary-content: #fefefe;
+/* beamlens Light Theme (default) */
+[data-theme="beamlens-light"],
+:root {
+  color-scheme: light;
+  /* Cool white/blue-tinted surfaces */
+  --color-base-100: oklch(0.985 0.008 230);
+  --color-base-200: oklch(0.95 0.012 230);
+  --color-base-300: oklch(0.98 0.006 230);
+  --color-base-content: oklch(0.2 0.02 230);
+  /* Bold saturated blue for light backgrounds */
+  --color-primary: oklch(0.55 0.22 230);
+  --color-primary-content: oklch(0.985 0.008 230);
+  /* Vibrant amber as secondary - pops on white */
+  --color-secondary: oklch(0.75 0.18 75);
+  --color-secondary-content: oklch(0.25 0.02 75);
+  /* Accent for highlights - vibrant blue */
+  --color-accent: oklch(0.50 0.24 235);
+  --color-accent-content: oklch(0.985 0.008 230);
+  /* Neutral tones with blue undertone */
+  --color-neutral: oklch(0.4 0.025 230);
+  --color-neutral-content: oklch(0.985 0.008 230);
+  /* Semantic colors */
+  --color-info: oklch(0.55 0.18 230);
+  --color-info-content: oklch(0.985 0.008 230);
+  --color-success: oklch(0.65 0.18 145);
+  --color-success-content: oklch(0.985 0.008 230);
+  --color-warning: oklch(0.70 0.18 85);
+  --color-warning-content: oklch(0.2 0.02 85);
+  --color-error: oklch(0.55 0.24 25);
+  --color-error-content: oklch(0.985 0.008 230);
+  /* Rounded corners - slightly larger for bolder look */
+  --radius-selector: 0.625rem;
+  --radius-field: 0.625rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
 
-  --color-secondary: #0d9488;
-  --color-secondary-content: #fefefe;
+/* beamlens Dark Theme */
+[data-theme="beamlens-dark"] {
+  color-scheme: dark;
+  /* Cool charcoal surfaces with blue undertones */
+  --color-base-100: oklch(0.14 0.015 230);
+  --color-base-200: oklch(0.17 0.018 230);
+  --color-base-300: oklch(0.21 0.020 230);
+  --color-base-content: oklch(0.95 0.01 230);
+  /* Vibrant blue primary for dark mode pop */
+  --color-primary: oklch(0.65 0.20 230);
+  --color-primary-content: oklch(0.14 0.015 230);
+  /* Vibrant amber as secondary */
+  --color-secondary: oklch(0.80 0.17 75);
+  --color-secondary-content: oklch(0.14 0.015 230);
+  /* Accent for highlights */
+  --color-accent: oklch(0.70 0.18 230);
+  --color-accent-content: oklch(0.14 0.015 230);
+  /* Neutral tones */
+  --color-neutral: oklch(0.28 0.022 230);
+  --color-neutral-content: oklch(0.95 0.01 230);
+  /* Semantic colors */
+  --color-info: oklch(0.65 0.18 230);
+  --color-info-content: oklch(0.14 0.015 230);
+  --color-success: oklch(0.72 0.17 145);
+  --color-success-content: oklch(0.14 0.015 230);
+  --color-warning: oklch(0.80 0.16 85);
+  --color-warning-content: oklch(0.14 0.015 230);
+  --color-error: oklch(0.65 0.22 25);
+  --color-error-content: oklch(0.95 0.01 230);
+  /* Rounded corners - slightly larger for bolder look */
+  --radius-selector: 0.625rem;
+  --radius-field: 0.625rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
 
-  --color-accent: #d97706;
-  --color-accent-content: #fefefe;
+/* Apply dark theme for users who prefer dark mode */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="beamlens-light"]) {
+    color-scheme: dark;
+    --color-base-100: oklch(0.14 0.015 230);
+    --color-base-200: oklch(0.17 0.018 230);
+    --color-base-300: oklch(0.21 0.020 230);
+    --color-base-content: oklch(0.95 0.01 230);
+    --color-primary: oklch(0.65 0.20 230);
+    --color-primary-content: oklch(0.14 0.015 230);
+    --color-secondary: oklch(0.80 0.17 75);
+    --color-secondary-content: oklch(0.14 0.015 230);
+    --color-accent: oklch(0.70 0.18 230);
+    --color-accent-content: oklch(0.14 0.015 230);
+    --color-neutral: oklch(0.28 0.022 230);
+    --color-neutral-content: oklch(0.95 0.01 230);
+    --color-info: oklch(0.65 0.18 230);
+    --color-info-content: oklch(0.14 0.015 230);
+    --color-success: oklch(0.72 0.17 145);
+    --color-success-content: oklch(0.14 0.015 230);
+    --color-warning: oklch(0.80 0.16 85);
+    --color-warning-content: oklch(0.14 0.015 230);
+    --color-error: oklch(0.65 0.22 25);
+    --color-error-content: oklch(0.95 0.01 230);
+    --radius-selector: 0.625rem;
+    --radius-field: 0.625rem;
+    --radius-box: 1rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 1;
+    --noise: 0;
+  }
+}
 
-  --color-neutral: #d6d3d1;
-  --color-neutral-content: #1c1917;
+/* Add variants based on LiveView classes */
+@custom-variant phx-click-loading (.phx-click-loading&, .phx-click-loading &);
+@custom-variant phx-submit-loading (.phx-submit-loading&, .phx-submit-loading &);
+@custom-variant phx-change-loading (.phx-change-loading&, .phx-change-loading &);
 
-  --color-info: #0891b2;
-  --color-info-content: #ffffff;
-  --color-success: #059669;
-  --color-success-content: #ffffff;
-  --color-warning: #d97706;
-  --color-warning-content: #ffffff;
-  --color-error: #dc2626;
-  --color-error-content: #ffffff;
+/* Use the data attribute for dark mode */
+@custom-variant dark (&:where([data-theme=beamlens-dark], [data-theme=beamlens-dark] *));
 
-  --rounded-box: 0.5rem;
-  --rounded-btn: 0.375rem;
-  --rounded-badge: 0.25rem;
+/* Make LiveView wrapper divs transparent for layout */
+[data-phx-session], [data-phx-teleported-src] { display: contents }
+
+/* Global styles */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem; /* Account for fixed nav (h-16 = 4rem + extra padding) */
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code, pre {
+  font-family: var(--font-mono);
+}
+
+::selection {
+  background-color: oklch(0.65 0.20 230 / 0.3);
+}
+
+/* Scrollbar styling for code blocks */
+pre::-webkit-scrollbar {
+  height: 6px;
+}
+
+pre::-webkit-scrollbar-track {
+  background: var(--color-surface-elevated);
+  border-radius: 3px;
+}
+
+pre::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+pre::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-muted);
 }
 
 /* Theme toggle icon visibility - show icon matching selected mode */
@@ -111,3 +255,182 @@
   }
 }
 
+/* ============================================
+   ANIMATION SYSTEM
+   ============================================ */
+
+/* Fade in from bottom */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+/* Animation delays for staggered effects */
+.animate-delay-100 { animation-delay: 100ms; }
+.animate-delay-200 { animation-delay: 200ms; }
+.animate-delay-300 { animation-delay: 300ms; }
+.animate-delay-400 { animation-delay: 400ms; }
+.animate-delay-500 { animation-delay: 500ms; }
+.animate-delay-600 { animation-delay: 600ms; }
+.animate-delay-700 { animation-delay: 700ms; }
+
+/* Gradient shift animation for text */
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 6s ease infinite;
+}
+
+/* Glow pulse for badges and highlights */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px 0 oklch(0.65 0.20 230 / 0.2);
+  }
+  50% {
+    box-shadow: 0 0 40px 8px oklch(0.65 0.20 230 / 0.35);
+  }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* Float animation for decorative elements */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Border gradient animation */
+@keyframes border-gradient {
+  0%, 100% {
+    border-color: oklch(0.65 0.20 230 / 0.5);
+  }
+  50% {
+    border-color: oklch(0.75 0.15 85 / 0.5);
+  }
+}
+
+.animate-border-gradient {
+  animation: border-gradient 4s ease infinite;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Gradient text utility for bold styling */
+.gradient-text {
+  background: linear-gradient(135deg, oklch(0.72 0.15 230), oklch(0.55 0.22 230), oklch(0.48 0.20 235));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Button glow effect for vibrant CTAs */
+.btn-glow {
+  transition: box-shadow 0.3s ease;
+}
+
+.btn-glow:hover {
+  box-shadow: 0 0 20px 4px oklch(0.65 0.20 230 / 0.3);
+}
+
+/* Card hover scale effect */
+.card-hover-scale {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-hover-scale:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -10px oklch(0.65 0.20 230 / 0.15);
+}
+
+/* ============================================
+   ENHANCED CARD EFFECTS
+   ============================================ */
+
+/* Feature card with dramatic hover */
+.feature-card {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.feature-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow:
+    0 25px 50px -12px oklch(0 0 0 / 0.25),
+    0 0 0 1px oklch(0.65 0.20 230 / 0.15),
+    0 0 40px 0 oklch(0.65 0.20 230 / 0.1);
+}
+
+/* ============================================
+   BACKGROUND TEXTURES & PATTERNS
+   ============================================ */
+
+/* Dot grid pattern for backgrounds */
+.dot-grid {
+  background-image: radial-gradient(oklch(0.65 0.20 230 / 0.12) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Gradient mesh for hero sections */
+.gradient-mesh {
+  background:
+    radial-gradient(at 20% 30%, oklch(0.65 0.20 230 / 0.25) 0%, transparent 50%),
+    radial-gradient(at 80% 70%, oklch(0.75 0.15 85 / 0.15) 0%, transparent 50%),
+    radial-gradient(at 50% 50%, oklch(0.48 0.20 235 / 0.15) 0%, transparent 60%);
+}
+
+/* ============================================
+   MICRO-INTERACTIONS
+   ============================================ */
+
+/* Link underline animation */
+.link-underline {
+  position: relative;
+}
+
+.link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: currentColor;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.link-underline:hover::after {
+  width: 100%;
+}
+
+/* Icon container gradient */
+.icon-gradient-bg {
+  background: linear-gradient(135deg, oklch(0.65 0.20 230 / 0.15), oklch(0.48 0.20 235 / 0.1));
+  transition: all 0.3s ease;
+}
+
+.icon-gradient-bg:hover {
+  background: linear-gradient(135deg, oklch(0.65 0.20 230 / 0.25), oklch(0.48 0.20 235 / 0.2));
+  box-shadow: 0 0 30px 0 oklch(0.65 0.20 230 / 0.2);
+}
