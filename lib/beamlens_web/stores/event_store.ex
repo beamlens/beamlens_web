@@ -17,8 +17,8 @@ defmodule BeamlensWeb.EventStore do
   @operator_events [
     [:beamlens, :operator, :iteration_start],
     [:beamlens, :operator, :state_change],
-    [:beamlens, :operator, :alert_fired],
-    [:beamlens, :operator, :get_alerts],
+    [:beamlens, :operator, :notification_sent],
+    [:beamlens, :operator, :get_notifications],
     [:beamlens, :operator, :take_snapshot],
     [:beamlens, :operator, :get_snapshot],
     [:beamlens, :operator, :get_snapshots],
@@ -31,10 +31,10 @@ defmodule BeamlensWeb.EventStore do
   ]
 
   @coordinator_events [
-    [:beamlens, :coordinator, :alert_received],
+    [:beamlens, :coordinator, :notification_received],
     [:beamlens, :coordinator, :iteration_start],
-    [:beamlens, :coordinator, :get_alerts],
-    [:beamlens, :coordinator, :update_alert_statuses],
+    [:beamlens, :coordinator, :get_notifications],
+    [:beamlens, :coordinator, :update_notification_statuses],
     [:beamlens, :coordinator, :insight_produced],
     [:beamlens, :coordinator, :done],
     [:beamlens, :coordinator, :think],
@@ -48,7 +48,7 @@ defmodule BeamlensWeb.EventStore do
   end
 
   @doc """
-  Returns all events, optionally filtered by source (watcher name or :coordinator).
+  Returns all events, optionally filtered by source (operator name or :coordinator).
   Events are returned newest first.
   """
   def list_events(source \\ nil) do
@@ -144,16 +144,21 @@ defmodule BeamlensWeb.EventStore do
     %{from: meta[:from], to: meta[:to], reason: meta[:reason]}
   end
 
-  defp sanitize_metadata([:beamlens, :operator, :alert_fired], meta) do
-    alert = meta[:alert]
-    %{alert_id: alert.id, severity: alert.severity, anomaly_type: alert.anomaly_type}
+  defp sanitize_metadata([:beamlens, :operator, :notification_sent], meta) do
+    notification = meta[:notification]
+
+    %{
+      notification_id: notification.id,
+      severity: notification.severity,
+      anomaly_type: notification.anomaly_type
+    }
   end
 
   defp sanitize_metadata([:beamlens, :operator, :take_snapshot], meta) do
     %{snapshot_id: meta[:snapshot_id]}
   end
 
-  defp sanitize_metadata([:beamlens, :operator, :get_alerts], meta) do
+  defp sanitize_metadata([:beamlens, :operator, :get_notifications], meta) do
     %{count: meta[:count]}
   end
 
@@ -165,16 +170,16 @@ defmodule BeamlensWeb.EventStore do
     %{count: meta[:count]}
   end
 
-  defp sanitize_metadata([:beamlens, :operator, :execute_start], _meta) do
-    %{}
+  defp sanitize_metadata([:beamlens, :operator, :execute_start], meta) do
+    %{code: meta[:code]}
   end
 
-  defp sanitize_metadata([:beamlens, :operator, :execute_complete], _meta) do
-    %{}
+  defp sanitize_metadata([:beamlens, :operator, :execute_complete], meta) do
+    %{code: meta[:code], result: inspect(meta[:result])}
   end
 
   defp sanitize_metadata([:beamlens, :operator, :execute_error], meta) do
-    %{reason: inspect(meta[:reason])}
+    %{code: meta[:code], reason: inspect(meta[:reason])}
   end
 
   defp sanitize_metadata([:beamlens, :operator, :wait], meta) do
@@ -186,36 +191,48 @@ defmodule BeamlensWeb.EventStore do
   end
 
   defp sanitize_metadata([:beamlens, :operator, :llm_error], meta) do
-    %{reason: inspect(meta[:reason])}
+    %{
+      reason: inspect(meta[:reason]),
+      retry_count: meta[:retry_count],
+      will_retry: meta[:will_retry]
+    }
   end
 
-  defp sanitize_metadata([:beamlens, :coordinator, :alert_received], meta) do
-    %{alert_id: meta[:alert_id], operator: meta[:operator]}
+  defp sanitize_metadata([:beamlens, :coordinator, :notification_received], meta) do
+    %{notification_id: meta[:notification_id], operator: meta[:operator]}
   end
 
   defp sanitize_metadata([:beamlens, :coordinator, :iteration_start], meta) do
-    %{iteration: meta[:iteration], alert_count: meta[:alert_count]}
+    %{iteration: meta[:iteration], notification_count: meta[:notification_count]}
   end
 
-  defp sanitize_metadata([:beamlens, :coordinator, :get_alerts], meta) do
-    %{count: meta[:count]}
+  defp sanitize_metadata([:beamlens, :coordinator, :get_notifications], meta) do
+    %{count: meta[:count], status: meta[:status]}
   end
 
-  defp sanitize_metadata([:beamlens, :coordinator, :update_alert_statuses], meta) do
+  defp sanitize_metadata([:beamlens, :coordinator, :update_notification_statuses], meta) do
     %{count: meta[:count], status: meta[:status]}
   end
 
   defp sanitize_metadata([:beamlens, :coordinator, :insight_produced], meta) do
     insight = meta[:insight]
-    %{insight_id: insight.id, correlation_type: insight.correlation_type}
+
+    %{
+      insight_id: insight.id,
+      correlation_type: insight.correlation_type,
+      summary: insight.summary,
+      root_cause_hypothesis: insight.root_cause_hypothesis,
+      confidence: insight.confidence,
+      notification_count: length(insight.notification_ids)
+    }
   end
 
   defp sanitize_metadata([:beamlens, :coordinator, :done], meta) do
     %{has_unread: meta[:has_unread]}
   end
 
-  defp sanitize_metadata([:beamlens, :coordinator, :think], _meta) do
-    %{}
+  defp sanitize_metadata([:beamlens, :coordinator, :think], meta) do
+    %{thought: meta[:thought]}
   end
 
   defp sanitize_metadata([:beamlens, :coordinator, :llm_error], meta) do

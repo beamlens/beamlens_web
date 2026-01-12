@@ -3,8 +3,8 @@ defmodule BeamlensWeb.DashboardLive do
   Main LiveView for the BeamLens dashboard.
 
   Uses a sidebar + main panel layout:
-  - Sidebar: Shows sources (operators, coordinator) and quick filters (alerts, insights)
-  - Main panel: Shows events filtered by selection, with cards for alerts/insights views
+  - Sidebar: Shows sources (operators, coordinator) and quick filters (notifications, insights)
+  - Main panel: Shows events filtered by selection, with cards for notifications/insights views
 
   Supports cluster-wide monitoring via node selection.
   """
@@ -121,7 +121,7 @@ defmodule BeamlensWeb.DashboardLive do
       exported_at: DateTime.utc_now(),
       node: node,
       events: fetch_events(node),
-      alerts: fetch_alerts(node),
+      notifications: fetch_notifications(node),
       insights: fetch_insights(node),
       metadata: %{
         selected_source: socket.assigns.selected_source,
@@ -416,7 +416,7 @@ defmodule BeamlensWeb.DashboardLive do
         selected_source={@selected_source}
         operators={@operators}
         coordinator_status={@coordinator_status}
-        alert_count={@alert_counts.total}
+        notification_count={@notification_counts.total}
         insight_count={length(@insights)}
         mobile_open={@sidebar_open}
       />
@@ -436,7 +436,7 @@ defmodule BeamlensWeb.DashboardLive do
           event_sources={@event_sources}
           selected_event_id={@selected_event_id}
           events_paused={@events_paused}
-          alerts={@alerts}
+          notifications={@notifications}
           insights={@insights}
           coordinator_status={@coordinator_status}
         />
@@ -615,10 +615,10 @@ defmodule BeamlensWeb.DashboardLive do
     """
   end
 
-  defp type_options(:alerts) do
+  defp type_options(:notifications) do
     [
-      {:alert_fired, "Alerts Fired"},
-      {:alert_received, "Alerts Received"}
+      {:notification_sent, "Notifications Sent"},
+      {:notification_received, "Notifications Received"}
     ]
   end
 
@@ -632,8 +632,8 @@ defmodule BeamlensWeb.DashboardLive do
     [
       {:iteration_start, "Iterations"},
       {:state_change, "State Changes"},
-      {:alert_fired, "Alerts Fired"},
-      {:get_alerts, "Get Alerts"},
+      {:notification_sent, "Notifications Sent"},
+      {:get_notifications, "Get Notifications"},
       {:take_snapshot, "Take Snapshot"},
       {:get_snapshot, "Get Snapshot"},
       {:get_snapshots, "Get Snapshots"},
@@ -643,8 +643,8 @@ defmodule BeamlensWeb.DashboardLive do
       {:wait, "Wait"},
       {:think, "Think"},
       {:llm_error, "LLM Errors"},
-      {:alert_received, "Alerts Received"},
-      {:update_alert_statuses, "Update Alert Statuses"},
+      {:notification_received, "Notifications Received"},
+      {:update_notification_statuses, "Update Notification Statuses"},
       {:insight_produced, "Insights"},
       {:done, "Done"}
     ]
@@ -659,7 +659,7 @@ defmodule BeamlensWeb.DashboardLive do
   end
 
   defp panel_title(:all), do: "All Activity"
-  defp panel_title(:alerts), do: "Alerts"
+  defp panel_title(:notifications), do: "Notifications"
   defp panel_title(:insights), do: "Insights"
   defp panel_title(:coordinator), do: "Coordinator"
 
@@ -688,7 +688,7 @@ defmodule BeamlensWeb.DashboardLive do
   defp maybe_add_param(params, key, value), do: [{key, value} | params]
 
   defp source_to_string(:all), do: nil
-  defp source_to_string(:alerts), do: "alerts"
+  defp source_to_string(:notifications), do: "notifications"
   defp source_to_string(:insights), do: "insights"
   defp source_to_string(:coordinator), do: "coordinator"
   defp source_to_string(operator) when is_atom(operator), do: Atom.to_string(operator)
@@ -698,7 +698,7 @@ defmodule BeamlensWeb.DashboardLive do
 
   defp parse_source_param(nil, _operators), do: :all
   defp parse_source_param("all", _operators), do: :all
-  defp parse_source_param("alerts", _operators), do: :alerts
+  defp parse_source_param("notifications", _operators), do: :notifications
   defp parse_source_param("insights", _operators), do: :insights
   defp parse_source_param("coordinator", _operators), do: :coordinator
 
@@ -745,8 +745,8 @@ defmodule BeamlensWeb.DashboardLive do
   defp filter_by_source(events, :coordinator),
     do: Enum.filter(events, &(&1.source == :coordinator))
 
-  defp filter_by_source(events, :alerts) do
-    Enum.filter(events, &(&1.event_type in [:alert_fired, :alert_received]))
+  defp filter_by_source(events, :notifications) do
+    Enum.filter(events, &(&1.event_type in [:notification_sent, :notification_received]))
   end
 
   defp filter_by_source(events, :insights) do
@@ -766,15 +766,15 @@ defmodule BeamlensWeb.DashboardLive do
     node = socket.assigns.selected_node
 
     operators = fetch_operators(node)
-    alerts = fetch_alerts(node)
-    alert_counts = fetch_alert_counts(node)
+    notifications = fetch_notifications(node)
+    notification_counts = fetch_notification_counts(node)
     insights = fetch_insights(node)
     coordinator_status = fetch_coordinator_status(node)
 
     socket
     |> assign(:operators, operators)
-    |> assign(:alerts, alerts)
-    |> assign(:alert_counts, alert_counts)
+    |> assign(:notifications, notifications)
+    |> assign(:notification_counts, notification_counts)
     |> assign(:insights, insights)
     |> assign(:coordinator_status, coordinator_status)
     |> maybe_refresh_events()
@@ -815,15 +815,15 @@ defmodule BeamlensWeb.DashboardLive do
     end
   end
 
-  defp fetch_alerts(node) do
-    case rpc_call(node, BeamlensWeb.AlertStore, :alerts_callback, []) do
-      {:ok, alerts} -> alerts
+  defp fetch_notifications(node) do
+    case rpc_call(node, BeamlensWeb.NotificationStore, :notifications_callback, []) do
+      {:ok, notifications} -> notifications
       {:error, _reason} -> []
     end
   end
 
-  defp fetch_alert_counts(node) do
-    case rpc_call(node, BeamlensWeb.AlertStore, :alert_counts_callback, []) do
+  defp fetch_notification_counts(node) do
+    case rpc_call(node, BeamlensWeb.NotificationStore, :notification_counts_callback, []) do
       {:ok, counts} -> counts
       {:error, _reason} -> %{total: 0, unread: 0, acknowledged: 0, resolved: 0}
     end
@@ -850,7 +850,7 @@ defmodule BeamlensWeb.DashboardLive do
         Map.put(status, :running, process_running)
 
       {:error, _reason} ->
-        %{running: false, alert_count: 0, unread_count: 0, iteration: 0}
+        %{running: false, notification_count: 0, unread_count: 0, iteration: 0}
     end
   end
 
@@ -884,9 +884,9 @@ defmodule BeamlensWeb.DashboardLive do
 
     events = [
       [:beamlens, :operator, :state_change],
-      [:beamlens, :operator, :alert_fired],
+      [:beamlens, :operator, :notification_sent],
       [:beamlens, :coordinator, :insight_produced],
-      [:beamlens, :coordinator, :alert_received]
+      [:beamlens, :coordinator, :notification_received]
     ]
 
     :telemetry.attach_many(

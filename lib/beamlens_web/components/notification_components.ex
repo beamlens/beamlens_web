@@ -1,36 +1,36 @@
-defmodule BeamlensWeb.AlertComponents do
+defmodule BeamlensWeb.NotificationComponents do
   @moduledoc """
-  Components for displaying alerts.
+  Components for displaying notifications.
   """
 
   use Phoenix.Component
   import BeamlensWeb.CoreComponents
 
   @doc """
-  Renders an alert card.
+  Renders a notification card.
   """
-  attr(:alert, :map, required: true)
+  attr(:notification, :map, required: true)
 
-  def alert_card(assigns) do
+  def notification_card(assigns) do
     ~H"""
     <.card class="mb-4 relative">
       <div class="absolute top-2 right-2">
-        <.copy_all_button data={Map.from_struct(@alert)} />
+        <.copy_all_button data={Map.from_struct(@notification)} />
       </div>
       <div class="p-4 border-b border-base-300 flex items-center gap-3 pr-10">
-        <.badge variant={@alert.severity}><%= @alert.severity %></.badge>
-        <.badge variant={@alert.status}><%= @alert.status %></.badge>
-        <span class="font-medium text-base-content"><%= format_operator_name(@alert.operator) %></span>
+        <.badge variant={@notification.severity}><%= @notification.severity %></.badge>
+        <.badge variant={@notification.status}><%= @notification.status %></.badge>
+        <span class="font-medium text-base-content"><%= format_operator_name(@notification.operator) %></span>
         <span class="flex-1"></span>
-        <.copyable value={@alert.id} display={String.slice(@alert.id, 0..7) <> "..."} code={true} />
+        <.copyable value={@notification.id} display={String.slice(@notification.id, 0..7) <> "..."} code={true} />
       </div>
       <div class="p-4">
         <p class="text-base mb-3">
-          <.copyable value={@alert.summary} code={false} class="text-base-content" />
+          <.copyable value={@notification.summary} code={false} class="text-base-content" />
         </p>
         <div class="flex flex-wrap gap-3 text-sm text-base-content/70">
-          <span>Type: <.copyable value={to_string(@alert.anomaly_type)} code={false} class="text-base-content/70" /></span>
-          <span class="font-mono text-xs"><.timestamp value={@alert.detected_at} format={:datetime} /></span>
+          <span>Type: <.copyable value={to_string(@notification.anomaly_type)} code={false} class="text-base-content/70" /></span>
+          <span class="font-mono text-xs"><.timestamp value={@notification.detected_at} format={:datetime} /></span>
         </div>
       </div>
     </.card>
@@ -38,16 +38,16 @@ defmodule BeamlensWeb.AlertComponents do
   end
 
   @doc """
-  Renders filter pills for alert status.
+  Renders filter pills for notification status.
   """
   attr(:current_filter, :atom, default: nil)
   attr(:counts, :map, required: true)
 
-  def alert_filters(assigns) do
+  def notification_filters(assigns) do
     ~H"""
     <div class="flex flex-wrap gap-2 mb-4">
       <button
-        phx-click="filter_alerts"
+        phx-click="filter_notifications"
         phx-value-status=""
         class={[
           "btn btn-sm",
@@ -57,7 +57,7 @@ defmodule BeamlensWeb.AlertComponents do
         All (<%= @counts.total %>)
       </button>
       <button
-        phx-click="filter_alerts"
+        phx-click="filter_notifications"
         phx-value-status="unread"
         class={[
           "btn btn-sm",
@@ -67,7 +67,7 @@ defmodule BeamlensWeb.AlertComponents do
         Unread (<%= @counts.unread %>)
       </button>
       <button
-        phx-click="filter_alerts"
+        phx-click="filter_notifications"
         phx-value-status="acknowledged"
         class={[
           "btn btn-sm",
@@ -77,7 +77,7 @@ defmodule BeamlensWeb.AlertComponents do
         Acknowledged (<%= @counts.acknowledged %>)
       </button>
       <button
-        phx-click="filter_alerts"
+        phx-click="filter_notifications"
         phx-value-status="resolved"
         class={[
           "btn btn-sm",
@@ -91,15 +91,15 @@ defmodule BeamlensWeb.AlertComponents do
   end
 
   @doc """
-  Renders a list of alert cards.
+  Renders a list of notification cards.
   """
-  attr(:alerts, :list, required: true)
+  attr(:notifications, :list, required: true)
 
-  def alert_list(assigns) do
+  def notification_list(assigns) do
     ~H"""
     <div>
-      <%= for alert <- @alerts do %>
-        <.alert_card alert={alert} />
+      <%= for notification <- @notifications do %>
+        <.notification_card notification={notification} />
       <% end %>
     </div>
     """

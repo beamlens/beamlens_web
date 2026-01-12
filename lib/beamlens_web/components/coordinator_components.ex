@@ -28,11 +28,11 @@ defmodule BeamlensWeb.CoordinatorComponents do
         <div class="text-2xl font-semibold text-base-content"><%= @status.iteration %></div>
       </div>
       <div class="bg-base-200 border border-base-300 rounded-lg p-4">
-        <div class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Total Alerts</div>
-        <div class="text-2xl font-semibold text-base-content"><%= @status.alert_count %></div>
+        <div class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Total Notifications</div>
+        <div class="text-2xl font-semibold text-base-content"><%= @status.notification_count %></div>
       </div>
       <div class="bg-base-200 border border-base-300 rounded-lg p-4">
-        <div class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Unread Alerts</div>
+        <div class="text-xs text-base-content/50 uppercase tracking-wider mb-1">Unread Notifications</div>
         <div class={[
           "text-2xl font-semibold",
           if(@status.unread_count > 0, do: "text-primary", else: "text-base-content")
@@ -72,7 +72,7 @@ defmodule BeamlensWeb.CoordinatorComponents do
           </div>
         <% end %>
         <div class="flex flex-wrap gap-3 text-sm text-base-content/70">
-          <span>Correlated <%= length(@insight.alert_ids) %> alert(s)</span>
+          <span>Correlated <%= length(@insight.notification_ids) %> notification(s)</span>
           <span class="font-mono text-xs"><%= format_datetime(@insight.created_at) %></span>
         </div>
       </div>

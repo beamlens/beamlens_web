@@ -1,7 +1,7 @@
 defmodule BeamlensWeb do
   @moduledoc """
   BeamLens Web Dashboard - A mountable Phoenix LiveView dashboard for monitoring
-  BeamLens watchers, alerts, and coordinator insights.
+  BeamLens operators, notifications, and coordinator insights.
 
   ## Usage
 

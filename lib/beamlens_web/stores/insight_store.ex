@@ -74,7 +74,7 @@ defmodule BeamlensWeb.InsightStore do
   def handle_telemetry_event(_event, _measurements, %{insight: insight}, _config) do
     insight_data = %{
       id: insight.id,
-      alert_ids: insight.alert_ids,
+      notification_ids: insight.notification_ids,
       correlation_type: insight.correlation_type,
       summary: insight.summary,
       root_cause_hypothesis: insight.root_cause_hypothesis,

@@ -6,7 +6,7 @@ defmodule BeamlensWeb.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      BeamlensWeb.AlertStore,
+      BeamlensWeb.NotificationStore,
       BeamlensWeb.InsightStore,
       BeamlensWeb.EventStore
     ]

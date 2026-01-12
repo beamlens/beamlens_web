@@ -13,7 +13,7 @@ defmodule BeamlensWeb.SidebarComponents do
   attr(:selected_source, :any, required: true)
   attr(:operators, :list, required: true)
   attr(:coordinator_status, :map, required: true)
-  attr(:alert_count, :integer, default: 0)
+  attr(:notification_count, :integer, default: 0)
   attr(:insight_count, :integer, default: 0)
   attr(:mobile_open, :boolean, default: false)
 
@@ -92,16 +92,16 @@ defmodule BeamlensWeb.SidebarComponents do
         <button
           type="button"
           phx-click="select_source"
-          phx-value-source="alerts"
+          phx-value-source="notifications"
           class={[
             "btn btn-ghost btn-sm justify-start w-full gap-2",
-            @selected_source == :alerts && "btn-active text-primary"
+            @selected_source == :notifications && "btn-active text-primary"
           ]}
         >
           <.icon name="hero-bell" class="w-5 h-5 shrink-0" />
-          <span class="flex-1 text-left truncate">Alerts</span>
-          <%= if @alert_count > 0 do %>
-            <span class="badge badge-sm badge-neutral"><%= @alert_count %></span>
+          <span class="flex-1 text-left truncate">Notifications</span>
+          <%= if @notification_count > 0 do %>
+            <span class="badge badge-sm badge-neutral"><%= @notification_count %></span>
           <% end %>
         </button>
         <button
@@ -202,8 +202,8 @@ defmodule BeamlensWeb.SidebarComponents do
     </div>
     <div class="flex gap-4 px-3 py-1 pl-8">
       <div class="flex items-baseline gap-1">
-        <span class="text-sm font-semibold text-base-content"><%= @status.alert_count || 0 %></span>
-        <span class="text-xs text-base-content/50">alerts</span>
+        <span class="text-sm font-semibold text-base-content"><%= @status.notification_count || 0 %></span>
+        <span class="text-xs text-base-content/50">notifications</span>
       </div>
       <div class="flex items-baseline gap-1">
         <span class="text-sm font-semibold text-base-content"><%= @status.unread_count || 0 %></span>

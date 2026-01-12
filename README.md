@@ -1,13 +1,13 @@
 # BeamlensWeb
 
-A Phoenix LiveView dashboard for monitoring BeamLens watchers and coordinator activity. Provides real-time visibility into system health, alerts, and insights.
+A Phoenix LiveView dashboard for monitoring BeamLens operators and coordinator activity. Provides real-time visibility into system health, notifications, and insights.
 
 ## Features
 
 - Real-time event stream with filtering and search
-- Watcher status monitoring with state badges
+- Operator status monitoring with state badges
 - Coordinator status and iteration tracking
-- Alert and insight quick filters
+- Notification and insight quick filters
 - Multi-node cluster support
 - JSON export for analysis
 - Light/dark/system theme support
@@ -123,17 +123,20 @@ lib/beamlens_web/
 ├── endpoint.ex             # Phoenix endpoint
 ├── router.ex               # Routes
 ├── components/
-│   ├── core_components.ex       # Shared UI components
-│   ├── layouts.ex               # Root/dashboard layouts
-│   ├── sidebar_components.ex    # Sidebar navigation
-│   ├── event_components.ex      # Event list/detail views
-│   └── coordinator_components.ex # Coordinator status
+│   ├── core_components.ex          # Shared UI components
+│   ├── icons.ex                    # Icon components
+│   ├── layouts.ex                  # Root/dashboard layouts
+│   ├── sidebar_components.ex       # Sidebar navigation
+│   ├── event_components.ex         # Event list/detail views
+│   ├── coordinator_components.ex   # Coordinator status
+│   ├── notification_components.ex  # Notification cards and filters
+│   └── operator_components.ex      # Operator status display
 ├── live/
 │   └── dashboard_live.ex   # Main dashboard LiveView
 └── stores/
-    ├── alert_store.ex      # Alert state management
-    ├── event_store.ex      # Event stream storage
-    └── insight_store.ex    # Insight state management
+    ├── notification_store.ex # Notification state management
+    ├── event_store.ex        # Event stream storage
+    └── insight_store.ex      # Insight state management
 ```
 
 ## License

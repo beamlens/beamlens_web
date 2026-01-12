@@ -165,12 +165,12 @@ defmodule BeamlensWeb.EventComponents do
             <option value="" selected={@current_filter == nil}>All Events</option>
             <option value="iteration_start" selected={@current_filter == :iteration_start}>Iterations</option>
             <option value="state_change" selected={@current_filter == :state_change}>State Changes</option>
-            <option value="alert_fired" selected={@current_filter == :alert_fired}>Alerts Fired</option>
+            <option value="notification_sent" selected={@current_filter == :notification_sent}>Notifications Sent</option>
             <option value="take_snapshot" selected={@current_filter == :take_snapshot}>Snapshots</option>
             <option value="wait" selected={@current_filter == :wait}>Wait</option>
             <option value="think" selected={@current_filter == :think}>Think</option>
             <option value="llm_error" selected={@current_filter == :llm_error}>LLM Errors</option>
-            <option value="alert_received" selected={@current_filter == :alert_received}>Alerts Received</option>
+            <option value="notification_received" selected={@current_filter == :notification_received}>Notifications Received</option>
             <option value="insight_produced" selected={@current_filter == :insight_produced}>Insights</option>
             <option value="done" selected={@current_filter == :done}>Done</option>
           </select>
@@ -221,24 +221,24 @@ defmodule BeamlensWeb.EventComponents do
 
   defp format_event_type(:iteration_start), do: "ITERATION"
   defp format_event_type(:state_change), do: "STATE"
-  defp format_event_type(:alert_fired), do: "ALERT"
+  defp format_event_type(:notification_sent), do: "NOTIFICATION"
   defp format_event_type(:take_snapshot), do: "SNAPSHOT"
   defp format_event_type(:wait), do: "WAIT"
   defp format_event_type(:think), do: "THINK"
   defp format_event_type(:llm_error), do: "ERROR"
-  defp format_event_type(:alert_received), do: "RECEIVED"
+  defp format_event_type(:notification_received), do: "RECEIVED"
   defp format_event_type(:insight_produced), do: "INSIGHT"
   defp format_event_type(:done), do: "DONE"
   defp format_event_type(type), do: type |> to_string() |> String.upcase()
 
   defp event_badge_class(:iteration_start), do: "badge-primary"
   defp event_badge_class(:state_change), do: "badge-info"
-  defp event_badge_class(:alert_fired), do: "badge-error"
+  defp event_badge_class(:notification_sent), do: "badge-error"
   defp event_badge_class(:take_snapshot), do: "badge-secondary"
   defp event_badge_class(:wait), do: "badge-neutral"
   defp event_badge_class(:think), do: "badge-accent"
   defp event_badge_class(:llm_error), do: "badge-error"
-  defp event_badge_class(:alert_received), do: "badge-warning"
+  defp event_badge_class(:notification_received), do: "badge-warning"
   defp event_badge_class(:insight_produced), do: "badge-success"
   defp event_badge_class(:done), do: "badge-success"
   defp event_badge_class(_), do: "badge-neutral"
@@ -249,7 +249,7 @@ defmodule BeamlensWeb.EventComponents do
   defp format_source(source), do: to_string(source)
 
   defp format_event_details(%{event_type: :iteration_start, source: :coordinator, metadata: meta}) do
-    "Analysis iteration ##{meta[:iteration]} (#{meta[:alert_count]} alerts)"
+    "Analysis iteration ##{meta[:iteration]} (#{meta[:notification_count]} notifications)"
   end
 
   defp format_event_details(%{event_type: :iteration_start, metadata: meta}) do
@@ -261,8 +261,8 @@ defmodule BeamlensWeb.EventComponents do
       if(meta[:reason], do: " (#{truncate(meta[:reason], 30)})", else: "")
   end
 
-  defp format_event_details(%{event_type: :alert_fired, metadata: meta}) do
-    "#{meta[:severity]} alert: #{meta[:anomaly_type]}"
+  defp format_event_details(%{event_type: :notification_sent, metadata: meta}) do
+    "#{meta[:severity]} notification: #{meta[:anomaly_type]}"
   end
 
   defp format_event_details(%{event_type: :take_snapshot, metadata: meta}) do
@@ -281,8 +281,8 @@ defmodule BeamlensWeb.EventComponents do
     "LLM error: #{truncate(meta[:reason], 40)}"
   end
 
-  defp format_event_details(%{event_type: :alert_received, metadata: meta}) do
-    "Alert #{String.slice(meta[:alert_id] || "", 0..7)} from #{meta[:operator]}"
+  defp format_event_details(%{event_type: :notification_received, metadata: meta}) do
+    "Notification #{String.slice(meta[:notification_id] || "", 0..7)} from #{meta[:operator]}"
   end
 
   defp format_event_details(%{event_type: :insight_produced, metadata: meta}) do

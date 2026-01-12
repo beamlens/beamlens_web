@@ -13,7 +13,7 @@ defmodule BeamlensWeb.CoreComponents do
   Variants are mapped to DaisyUI badge classes:
   - States: `:healthy`, `:observing`, `:warning`, `:critical`, `:idle`
   - Severities: `:info`, `:warning`, `:critical`
-  - Alert statuses: `:unread`, `:acknowledged`, `:resolved`
+  - Notification statuses: `:unread`, `:acknowledged`, `:resolved`
   - Confidence: `:high`, `:medium`, `:low`
   - Correlation types: `:temporal`, `:causal`, `:pattern`
   """
@@ -35,9 +35,9 @@ defmodule BeamlensWeb.CoreComponents do
   defp variant_class(:warning), do: "badge-warning"
   defp variant_class(:critical), do: "badge-error"
   defp variant_class(:idle), do: "badge-neutral"
-  # Alert severities
+  # Notification severities
   defp variant_class(:info), do: "badge-info"
-  # Alert statuses
+  # Notification statuses
   defp variant_class(:unread), do: "badge-warning"
   defp variant_class(:acknowledged), do: "badge-info"
   defp variant_class(:resolved), do: "badge-success"
@@ -386,7 +386,7 @@ defmodule BeamlensWeb.CoreComponents do
 
       <.copyable value={@event.id} />
       <.copyable value={@event.trace_id} display={String.slice(@event.trace_id, 0..7) <> "..."} />
-      <.copyable value={@alert.summary} />
+      <.copyable value={@notification.summary} />
   """
   attr(:value, :string, required: true)
   attr(:display, :string, default: nil)
@@ -430,7 +430,7 @@ defmodule BeamlensWeb.CoreComponents do
   ## Examples
 
       <.copy_all_button data={%{id: @event.id, name: @event.name}} />
-      <.copy_all_button data={@alert} />
+      <.copy_all_button data={@notification} />
   """
   attr(:data, :map, required: true)
 
