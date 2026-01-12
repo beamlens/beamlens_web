@@ -430,6 +430,7 @@ defmodule BeamlensWeb.DashboardLive do
       <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-base-100">
         <.main_panel
           selected_source={@selected_source}
+          operators={@operators}
           filtered_events={@filtered_events}
           event_type_filter={@event_type_filter}
           event_sources={@event_sources}
@@ -555,6 +556,7 @@ defmodule BeamlensWeb.DashboardLive do
     <div class="flex flex-col gap-4 h-full">
       <.panel_header
         selected_source={@selected_source}
+        operators={@operators}
         event_type_filter={@event_type_filter}
         event_sources={@event_sources}
         events_paused={@events_paused}
@@ -570,9 +572,17 @@ defmodule BeamlensWeb.DashboardLive do
   end
 
   defp panel_header(assigns) do
+    assigns =
+      assign(assigns, :description, panel_description(assigns.selected_source, assigns.operators))
+
     ~H"""
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 shrink-0">
-      <h2 class="text-base font-semibold text-base-content"><%= panel_title(@selected_source) %></h2>
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 shrink-0">
+      <div>
+        <h2 class="text-base font-semibold text-base-content"><%= panel_title(@selected_source, @operators) %></h2>
+        <%= if @description do %>
+          <p class="text-sm text-base-content/60 mt-1"><%= @description %></p>
+        <% end %>
+      </div>
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
         <.event_type_filter
           current_filter={@event_type_filter}
@@ -657,16 +667,28 @@ defmodule BeamlensWeb.DashboardLive do
     """
   end
 
-  defp panel_title(:all), do: "All Activity"
-  defp panel_title(:notifications), do: "Notifications"
-  defp panel_title(:insights), do: "Insights"
-  defp panel_title(:coordinator), do: "Coordinator"
+  defp panel_title(:all, _operators), do: "All Activity"
+  defp panel_title(:notifications, _operators), do: "Notifications"
+  defp panel_title(:insights, _operators), do: "Insights"
+  defp panel_title(:coordinator, _operators), do: "Coordinator"
 
-  defp panel_title(operator) when is_atom(operator),
-    do: "#{format_operator_name(operator)} Activity"
+  defp panel_title(operator, operators) when is_atom(operator) do
+    case Enum.find(operators, &(&1.operator == operator)) do
+      %{title: title} when is_binary(title) -> "#{title} Activity"
+      _ -> "#{operator |> Atom.to_string() |> String.capitalize()} Activity"
+    end
+  end
 
-  defp format_operator_name(name) when is_atom(name) do
-    name |> Atom.to_string() |> String.capitalize()
+  defp panel_description(:all, _operators), do: nil
+  defp panel_description(:notifications, _operators), do: nil
+  defp panel_description(:insights, _operators), do: nil
+  defp panel_description(:coordinator, _operators), do: nil
+
+  defp panel_description(operator, operators) when is_atom(operator) do
+    case Enum.find(operators, &(&1.operator == operator)) do
+      %{description: description} when is_binary(description) -> description
+      _ -> nil
+    end
   end
 
   # URL building and parsing

@@ -141,7 +141,7 @@ defmodule BeamlensWeb.SidebarComponents do
           "btn btn-ghost btn-xs btn-square",
           if(@operator.running, do: "text-success hover:text-success", else: "text-error hover:text-error")
         ]}
-        title={if @operator.running, do: "Click to stop #{format_operator_name(@operator.operator)}", else: "Click to start #{format_operator_name(@operator.operator)}"}
+        title={if @operator.running, do: "Click to stop #{@operator.title || format_operator_name(@operator.operator)}", else: "Click to start #{@operator.title || format_operator_name(@operator.operator)}"}
       >
         <%= if @operator.running do %>
           <.icon name="hero-stop-circle" class="w-4 h-4" />
@@ -158,7 +158,7 @@ defmodule BeamlensWeb.SidebarComponents do
           @selected && "btn-active text-primary"
         ]}
       >
-        <span class="flex-1 text-left truncate"><%= format_operator_name(@operator.operator) %></span>
+        <span class="flex-1 text-left truncate"><%= @operator.title || format_operator_name(@operator.operator) %></span>
       </button>
     </div>
     """
