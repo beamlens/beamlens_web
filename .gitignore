@@ -26,3 +26,6 @@ beamlens_web-*.tar
 /assets/node_modules/
 
 .env
+
+# Development config with early access key
+/config/

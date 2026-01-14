@@ -12,6 +12,30 @@ defmodule BeamlensWeb.Router do
       end
   """
 
+  @valid_key "beamlens-early-2026"
+  @configured_key Application.compile_env(:beamlens_web, :access_key)
+
+  if @configured_key != @valid_key do
+    raise """
+
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    BeamLens is in early access.
+
+    You're free to use the library, but all I ask is that you fill out this short
+    form so I know you're using it and can send you updates and get feedback:
+
+        https://forms.gle/HMy84HQ68TAUAoDx6
+
+    Then add to your config/config.exs:
+
+        config :beamlens_web, access_key: "beamlens-early-2026"
+
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    """
+  end
+
   @doc """
   Defines a route to mount the BeamLens dashboard at the given path.
 

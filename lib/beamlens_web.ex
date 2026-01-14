@@ -24,7 +24,7 @@ defmodule BeamlensWeb do
   @doc """
   Returns the static path for BeamlensWeb assets.
   """
-  def static_paths, do: ~w(dashboard.css)
+  def static_paths, do: ~w(assets images)
 
   @doc """
   When used, dispatch to the appropriate controller/live_view/etc.

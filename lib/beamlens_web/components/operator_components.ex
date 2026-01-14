@@ -42,11 +42,10 @@ defmodule BeamlensWeb.OperatorComponents do
   end
 
   defp format_operator_name(name) when is_atom(name) do
+    # Handle module names like Beamlens.Skill.Beam
     name
-    |> Atom.to_string()
-    |> String.split("_")
-    |> Enum.map(&String.capitalize/1)
-    |> Enum.join(" ")
+    |> Module.split()
+    |> List.last()
   end
 
   defp format_operator_name(name), do: to_string(name)

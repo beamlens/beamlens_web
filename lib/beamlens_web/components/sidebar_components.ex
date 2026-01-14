@@ -1,6 +1,8 @@
 defmodule BeamlensWeb.SidebarComponents do
   @moduledoc """
   Components for the dashboard sidebar navigation.
+
+  Simplified for trigger-based analysis mode.
   """
 
   use Phoenix.Component
@@ -8,11 +10,10 @@ defmodule BeamlensWeb.SidebarComponents do
   import BeamlensWeb.Icons
 
   @doc """
-  Renders the main dashboard sidebar with sources and quick filters.
+  Renders the main dashboard sidebar with quick filters for trigger mode.
   """
   attr(:selected_source, :any, required: true)
-  attr(:operators, :list, required: true)
-  attr(:coordinator_status, :map, required: true)
+  attr(:analysis_running, :boolean, default: false)
   attr(:notification_count, :integer, default: 0)
   attr(:insight_count, :integer, default: 0)
   attr(:mobile_open, :boolean, default: false)
@@ -26,251 +27,183 @@ defmodule BeamlensWeb.SidebarComponents do
       ]}
       phx-click="close_sidebar"
     >
-      <div class="absolute inset-0 bg-black/50"></div>
+      <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
     </div>
     <aside class={[
-      "fixed inset-y-0 left-0 z-50 w-64 bg-base-200 border-r border-base-300 overflow-y-auto py-3 transition-transform duration-200 ease-in-out md:static md:translate-x-0 md:w-auto",
+      "fixed inset-y-0 left-0 z-50 w-72 bg-base-100 border-r border-base-300/50 overflow-y-auto transition-transform duration-300 ease-out md:static md:translate-x-0 md:w-auto shadow-2xl md:shadow-none",
       if(@mobile_open, do: "translate-x-0", else: "-translate-x-full")
     ]}>
-      <div class="flex items-center justify-between px-4 py-2 mb-2 md:hidden">
-        <span class="text-sm font-semibold text-base-content">Navigation</span>
+      <%!-- Mobile header --%>
+      <div class="flex items-center justify-between px-5 py-4 border-b border-base-300/50 md:hidden">
+        <span class="text-base font-bold text-base-content">Navigation</span>
         <button
           type="button"
           phx-click="close_sidebar"
-          class="btn btn-ghost btn-sm btn-square"
+          class="btn btn-ghost btn-sm btn-circle hover:bg-base-200"
           aria-label="Close sidebar"
         >
           <.icon name="hero-x-mark" class="w-5 h-5" />
         </button>
       </div>
-      <div class="px-2 mb-4">
-        <button
-          type="button"
-          phx-click="select_source"
-          phx-value-source="all"
-          class={[
-            "btn btn-ghost btn-sm justify-start w-full gap-2",
-            @selected_source == :all && "btn-active text-primary"
-          ]}
-        >
-          <span class="flex-1 text-left truncate">All Activity</span>
-        </button>
-      </div>
 
-      <div class="px-2 mb-4">
-        <div class="flex items-center justify-between px-3 py-2 mb-1">
-          <h2 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider">
-            Operators
+      <div class="p-4 space-y-6">
+        <%!-- Primary Action Section --%>
+        <div>
+          <h2 class="text-[10px] font-bold text-base-content/40 uppercase tracking-[0.15em] px-2 mb-3">
+            Actions
           </h2>
-          <.all_operators_controls operators={@operators} />
+          <button
+            type="button"
+            phx-click="select_source"
+            phx-value-source="trigger"
+            class={[
+              "group relative w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer",
+              if(@selected_source == :trigger,
+                do: "bg-primary text-primary-content shadow-lg shadow-primary/25",
+                else: "bg-base-200/50 text-base-content/80 hover:bg-primary/10 hover:text-primary"
+              )
+            ]}
+          >
+            <span class={[
+              "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all duration-200",
+              if(@selected_source == :trigger,
+                do: "bg-primary-content/20",
+                else: "bg-primary/10 group-hover:bg-primary/20"
+              )
+            ]}>
+              <%= if @selected_source == :trigger do %>
+                <.icon name="hero-bolt" class="w-4 h-4 text-primary-content" />
+              <% else %>
+                <.icon name="hero-bolt" class="w-4 h-4 text-primary" />
+              <% end %>
+            </span>
+            <span class="flex-1 text-left">Trigger Analysis</span>
+            <%= if @analysis_running do %>
+              <span class="loading loading-spinner loading-xs"></span>
+            <% end %>
+          </button>
         </div>
-        <%= for operator <- @operators do %>
-          <.operator_sidebar_item
-            operator={operator}
-            selected={@selected_source == operator.operator}
-          />
-        <% end %>
-        <%= if Enum.empty?(@operators) do %>
-          <div class="px-3 py-2 text-xs text-base-content/50 italic">No operators running</div>
-        <% end %>
-      </div>
 
-      <div class="px-2 mb-4">
-        <h2 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider px-3 py-2 mb-1">
-          Coordinator
-        </h2>
-        <.coordinator_sidebar_item
-          status={@coordinator_status}
-          selected={@selected_source == :coordinator}
-        />
-      </div>
+        <%!-- Event Filters Section --%>
+        <div>
+          <h2 class="text-[10px] font-bold text-base-content/40 uppercase tracking-[0.15em] px-2 mb-3">
+            Event Filters
+          </h2>
+          <div class="space-y-1">
+            <.sidebar_nav_item
+              icon="hero-queue-list"
+              label="All Activity"
+              source="all"
+              selected={@selected_source == :all}
+            />
+            <.sidebar_nav_item
+              icon="hero-bell"
+              label="Notifications"
+              source="notifications"
+              selected={@selected_source == :notifications}
+              count={@notification_count}
+            />
+            <.sidebar_nav_item
+              icon="hero-light-bulb"
+              label="Insights"
+              source="insights"
+              selected={@selected_source == :insights}
+              count={@insight_count}
+            />
+            <.sidebar_nav_item
+              icon="hero-cpu-chip"
+              label="Coordinator"
+              source="coordinator"
+              selected={@selected_source == :coordinator}
+            />
+          </div>
+        </div>
 
-      <div class="px-2 mb-4">
-        <h2 class="text-xs font-semibold text-base-content/50 uppercase tracking-wider px-3 py-2 mb-1">
-          Quick Filters
-        </h2>
-        <button
-          type="button"
-          phx-click="select_source"
-          phx-value-source="notifications"
-          class={[
-            "btn btn-ghost btn-sm justify-start w-full gap-2",
-            @selected_source == :notifications && "btn-active text-primary"
-          ]}
-        >
-          <.icon name="hero-bell" class="w-5 h-5 shrink-0" />
-          <span class="flex-1 text-left truncate">Notifications</span>
-          <%= if @notification_count > 0 do %>
-            <span class="badge badge-sm badge-neutral"><%= @notification_count %></span>
-          <% end %>
-        </button>
-        <button
-          type="button"
-          phx-click="select_source"
-          phx-value-source="insights"
-          class={[
-            "btn btn-ghost btn-sm justify-start w-full gap-2",
-            @selected_source == :insights && "btn-active text-primary"
-          ]}
-        >
-          <.icon name="hero-light-bulb" class="w-5 h-5 shrink-0" />
-          <span class="flex-1 text-left truncate">Insights</span>
-          <%= if @insight_count > 0 do %>
-            <span class="badge badge-sm badge-neutral"><%= @insight_count %></span>
-          <% end %>
-        </button>
+        <%!-- Status Section --%>
+        <div>
+          <h2 class="text-[10px] font-bold text-base-content/40 uppercase tracking-[0.15em] px-2 mb-3">
+            Status
+          </h2>
+          <div class="px-3 py-3 rounded-xl bg-base-200/30">
+            <div class="flex items-center gap-3">
+              <%= if @analysis_running do %>
+                <span class="relative flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                </span>
+                <span class="text-sm font-medium text-primary">Analysis running...</span>
+              <% else %>
+                <span class="w-3 h-3 rounded-full bg-base-content/20"></span>
+                <span class="text-sm text-base-content/50">Idle</span>
+              <% end %>
+            </div>
+          </div>
+        </div>
+
+        <%!-- Summary Section --%>
+        <%= if @notification_count > 0 or @insight_count > 0 do %>
+          <div>
+            <h2 class="text-[10px] font-bold text-base-content/40 uppercase tracking-[0.15em] px-2 mb-3">
+              Summary
+            </h2>
+            <div class="px-3 py-3 rounded-xl bg-base-200/30 space-y-2">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-base-content/60">Notifications</span>
+                <span class="font-semibold text-base-content tabular-nums"><%= @notification_count %></span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-base-content/60">Insights</span>
+                <span class="font-semibold text-base-content tabular-nums"><%= @insight_count %></span>
+              </div>
+            </div>
+          </div>
+        <% end %>
       </div>
     </aside>
     """
   end
 
-  @doc """
-  Renders an operator item in the sidebar.
-  """
-  attr(:operator, :map, required: true)
+  attr(:icon, :string, required: true)
+  attr(:label, :string, required: true)
+  attr(:source, :string, required: true)
   attr(:selected, :boolean, default: false)
+  attr(:count, :integer, default: 0)
 
-  def operator_sidebar_item(assigns) do
+  defp sidebar_nav_item(assigns) do
     ~H"""
-    <div class="flex items-center gap-1">
-      <button
-        type="button"
-        phx-click={if @operator.running, do: "stop_operator", else: "restart_operator"}
-        phx-value-operator={@operator.operator}
-        class={[
-          "btn btn-ghost btn-xs btn-square",
-          if(@operator.running, do: "text-success hover:text-success", else: "text-error hover:text-error")
-        ]}
-        title={if @operator.running, do: "Click to stop #{@operator.title || format_operator_name(@operator.operator)}", else: "Click to start #{@operator.title || format_operator_name(@operator.operator)}"}
-      >
-        <%= if @operator.running do %>
-          <.icon name="hero-stop-circle" class="w-4 h-4" />
-        <% else %>
-          <.icon name="hero-play-circle" class="w-4 h-4" />
-        <% end %>
-      </button>
-      <button
-        type="button"
-        phx-click="select_source"
-        phx-value-source={@operator.operator}
-        class={[
-          "btn btn-ghost btn-sm justify-start flex-1 gap-2",
-          @selected && "btn-active text-primary"
-        ]}
-      >
-        <span class="flex-1 text-left truncate"><%= @operator.title || format_operator_name(@operator.operator) %></span>
-      </button>
-    </div>
+    <button
+      type="button"
+      phx-click="select_source"
+      phx-value-source={@source}
+      class={[
+        "group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 cursor-pointer",
+        if(@selected,
+          do: "bg-primary/10 text-primary font-medium",
+          else: "text-base-content/70 hover:bg-base-200/50 hover:text-base-content"
+        )
+      ]}
+    >
+      <%!-- Active indicator --%>
+      <div class={[
+        "absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full transition-all duration-200",
+        if(@selected, do: "bg-primary", else: "bg-transparent")
+      ]}></div>
+
+      <%= if @selected do %>
+        <.icon name={@icon} class="w-5 h-5 shrink-0 transition-colors text-primary" />
+      <% else %>
+        <.icon name={@icon} class="w-5 h-5 shrink-0 transition-colors text-base-content/50 group-hover:text-base-content/70" />
+      <% end %>
+      <span class="flex-1 text-left"><%= @label %></span>
+      <%= if @count > 0 do %>
+        <span class={[
+          "px-2 py-0.5 text-xs font-medium rounded-full tabular-nums",
+          if(@selected, do: "bg-primary/20 text-primary", else: "bg-base-300 text-base-content/60")
+        ]}>
+          <%= @count %>
+        </span>
+      <% end %>
+    </button>
     """
   end
-
-  @doc """
-  Renders the coordinator item in the sidebar.
-  """
-  attr(:status, :map, required: true)
-  attr(:selected, :boolean, default: false)
-
-  def coordinator_sidebar_item(assigns) do
-    ~H"""
-    <div class="flex items-center gap-1">
-      <button
-        type="button"
-        phx-click={if @status.running, do: "stop_coordinator", else: "start_coordinator"}
-        class={[
-          "btn btn-ghost btn-xs btn-square",
-          if(@status.running, do: "text-success hover:text-success", else: "text-error hover:text-error")
-        ]}
-        title={if @status.running, do: "Click to stop coordinator", else: "Click to start coordinator"}
-      >
-        <%= if @status.running do %>
-          <.icon name="hero-stop-circle" class="w-4 h-4" />
-        <% else %>
-          <.icon name="hero-play-circle" class="w-4 h-4" />
-        <% end %>
-      </button>
-      <button
-        type="button"
-        phx-click="select_source"
-        phx-value-source="coordinator"
-        class={[
-          "btn btn-ghost btn-sm justify-start flex-1 gap-2",
-          @selected && "btn-active text-primary"
-        ]}
-      >
-        <span class="flex-1 text-left truncate">Status</span>
-      </button>
-    </div>
-    <div class="flex gap-4 px-3 py-1 pl-8">
-      <div class="flex items-baseline gap-1">
-        <span class="text-sm font-semibold text-base-content"><%= @status.notification_count || 0 %></span>
-        <span class="text-xs text-base-content/50">notifications</span>
-      </div>
-      <div class="flex items-baseline gap-1">
-        <span class="text-sm font-semibold text-base-content"><%= @status.unread_count || 0 %></span>
-        <span class="text-xs text-base-content/50">unread</span>
-      </div>
-    </div>
-    """
-  end
-
-  @doc """
-  Renders start/stop all controls for operators.
-  """
-  attr(:operators, :list, required: true)
-
-  def all_operators_controls(assigns) do
-    all_running = Enum.all?(assigns.operators, & &1.running)
-    any_running = Enum.any?(assigns.operators, & &1.running)
-    assigns = assign(assigns, all_running: all_running, any_running: any_running)
-
-    ~H"""
-    <%= cond do %>
-      <% @all_running -> %>
-        <button
-          type="button"
-          phx-click="stop_all_operators"
-          class="btn btn-ghost btn-xs btn-square text-success hover:text-success"
-          title="Click to stop all operators"
-        >
-          <.icon name="hero-stop-circle" class="w-4 h-4" />
-        </button>
-      <% @any_running -> %>
-        <div class="flex">
-          <button
-            type="button"
-            phx-click="start_all_operators"
-            class="btn btn-ghost btn-xs btn-square text-error hover:text-error"
-            title="Click to start all operators"
-          >
-            <.icon name="hero-play-circle" class="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            phx-click="stop_all_operators"
-            class="btn btn-ghost btn-xs btn-square text-success hover:text-success"
-            title="Click to stop all operators"
-          >
-            <.icon name="hero-stop-circle" class="w-4 h-4" />
-          </button>
-        </div>
-      <% true -> %>
-        <button
-          type="button"
-          phx-click="start_all_operators"
-          class="btn btn-ghost btn-xs btn-square text-error hover:text-error"
-          title="Click to start all operators"
-        >
-          <.icon name="hero-play-circle" class="w-4 h-4" />
-        </button>
-    <% end %>
-    """
-  end
-
-  defp format_operator_name(name) when is_atom(name) do
-    name
-    |> Atom.to_string()
-    |> String.capitalize()
-  end
-
-  defp format_operator_name(name), do: to_string(name)
 end

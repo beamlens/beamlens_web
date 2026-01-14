@@ -16,6 +16,7 @@ defmodule BeamlensWeb.DashboardLive do
   import BeamlensWeb.EventComponents
   import BeamlensWeb.Icons
   import BeamlensWeb.SidebarComponents
+  import BeamlensWeb.TriggerComponents
 
   @refresh_interval 5_000
   @rpc_timeout 5_000
@@ -28,16 +29,25 @@ defmodule BeamlensWeb.DashboardLive do
       schedule_refresh()
     end
 
+    node = Node.self()
+    available_skills = load_available_skills(node)
+    selected_skill_modules = Enum.map(available_skills, & &1.module)
+
     {:ok,
      socket
-     |> assign(:selected_source, :all)
+     |> assign(:selected_source, :trigger)
      |> assign(:event_type_filter, nil)
      |> assign(:selected_event_id, nil)
      |> assign(:events_paused, false)
      |> assign(:sidebar_open, false)
      |> assign(:settings_open, false)
-     |> assign(:selected_node, Node.self())
+     |> assign(:selected_node, node)
      |> assign(:available_nodes, get_nodes())
+     |> assign(:trigger_context, "")
+     |> assign(:available_skills, available_skills)
+     |> assign(:selected_skills, selected_skill_modules)
+     |> assign(:analysis_running, false)
+     |> assign(:analysis_result, nil)
      |> refresh_data()}
   end
 
@@ -83,7 +93,15 @@ defmodule BeamlensWeb.DashboardLive do
 
   def handle_event("select_node", %{"node" => node_str}, socket) do
     node = String.to_existing_atom(node_str)
-    {:noreply, socket |> assign(:selected_node, node) |> refresh_data()}
+    available_skills = load_available_skills(node)
+    selected_skill_modules = Enum.map(available_skills, & &1.module)
+
+    {:noreply,
+     socket
+     |> assign(:selected_node, node)
+     |> assign(:available_skills, available_skills)
+     |> assign(:selected_skills, selected_skill_modules)
+     |> refresh_data()}
   end
 
   def handle_event("select_event", %{"id" => id}, socket) do
@@ -336,6 +354,63 @@ defmodule BeamlensWeb.DashboardLive do
     {:noreply, socket}
   end
 
+  def handle_event("update_trigger_context", %{"context" => context}, socket) do
+    {:noreply, assign(socket, :trigger_context, context)}
+  end
+
+  def handle_event("toggle_skill", %{"skill" => skill_str}, socket) do
+    skill = String.to_existing_atom(skill_str)
+    selected = socket.assigns.selected_skills
+
+    new_selected =
+      if skill in selected do
+        List.delete(selected, skill)
+      else
+        [skill | selected]
+      end
+
+    {:noreply, assign(socket, :selected_skills, new_selected)}
+  end
+
+  def handle_event("select_all_skills", _params, socket) do
+    all_skill_modules = Enum.map(socket.assigns.available_skills, & &1.module)
+    {:noreply, assign(socket, :selected_skills, all_skill_modules)}
+  end
+
+  def handle_event("deselect_all_skills", _params, socket) do
+    {:noreply, assign(socket, :selected_skills, [])}
+  end
+
+  def handle_event("trigger_analysis", _params, socket) do
+    node = socket.assigns.selected_node
+    context = %{reason: socket.assigns.trigger_context}
+    skills = socket.assigns.selected_skills
+
+    socket =
+      socket
+      |> assign(:analysis_running, true)
+      |> assign(:analysis_result, nil)
+
+    liveview_pid = self()
+
+    Task.start(fn ->
+      result =
+        try do
+          :erpc.call(node, Beamlens.Coordinator, :run, [context, [skills: skills]], 300_000)
+        catch
+          :exit, reason -> {:error, reason}
+        end
+
+      send(liveview_pid, {:analysis_complete, result})
+    end)
+
+    {:noreply, socket}
+  end
+
+  def handle_event("clear_results", _params, socket) do
+    {:noreply, assign(socket, :analysis_result, nil)}
+  end
+
   @impl true
   def handle_info(:refresh, socket) do
     schedule_refresh()
@@ -344,6 +419,26 @@ defmodule BeamlensWeb.DashboardLive do
 
   def handle_info({:telemetry_event, _event_name, _data}, socket) do
     {:noreply, refresh_data(socket)}
+  end
+
+  def handle_info({:analysis_complete, {:ok, result}}, socket) do
+    socket =
+      socket
+      |> assign(:analysis_running, false)
+      |> assign(:analysis_result, result)
+      |> put_flash(:info, "Analysis complete")
+      |> refresh_data()
+
+    {:noreply, socket}
+  end
+
+  def handle_info({:analysis_complete, {:error, reason}}, socket) do
+    socket =
+      socket
+      |> assign(:analysis_running, false)
+      |> put_flash(:error, "Analysis failed: #{inspect(reason)}")
+
+    {:noreply, socket}
   end
 
   def handle_info({:nodeup, _node, _info}, socket) do
@@ -368,42 +463,53 @@ defmodule BeamlensWeb.DashboardLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="flex flex-col h-screen overflow-hidden md:grid md:grid-cols-[220px_1fr] md:grid-rows-[auto_1fr]">
-      <header class="md:col-span-2 bg-base-200 border-b border-base-300 px-4 py-3 md:px-6 md:py-4">
+    <div class="flex flex-col h-screen overflow-hidden md:grid md:grid-cols-[260px_1fr] md:grid-rows-[auto_1fr]">
+      <header class="md:col-span-2 bg-base-100/95 backdrop-blur-lg border-b border-base-300/50 px-4 py-3 md:px-6 md:py-4 sticky top-0 z-30">
         <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-3">
             <button
               type="button"
               phx-click="toggle_sidebar"
-              class="btn btn-ghost btn-sm btn-square md:hidden"
+              class="btn btn-ghost btn-sm btn-square hover:bg-base-200 md:hidden"
               aria-label="Toggle sidebar"
             >
               <.icon name="hero-bars-3" class="w-5 h-5" />
             </button>
-            <h1 class="text-lg md:text-xl font-semibold flex items-center gap-2">
-              <img src="/images/logo/icon-blue.png" alt="BeamLens" class="w-5 h-5 md:w-6 md:h-6" />
-              <span>beamlens</span>
-            </h1>
+            <a href="/dashboard" class="flex items-center gap-2.5 group">
+              <img src="/images/logo/icon-blue.png" alt="beamlens" width="32" height="32" class="w-8 h-8 shrink-0 object-contain transition-transform group-hover:scale-105" />
+              <h1 class="text-lg md:text-xl font-bold text-base-content">beamlens</h1>
+            </a>
           </div>
           <%!-- Desktop header controls --%>
-          <div class="hidden md:flex items-center gap-4 text-sm text-base-content/70">
-            <.node_selector
-              selected_node={@selected_node}
-              available_nodes={@available_nodes}
-            />
-            <span class="hidden lg:inline">Last updated: <.timestamp value={@last_updated} /></span>
-            <.timezone_toggle />
-            <.theme_toggle />
-            <button type="button" phx-click="export_data" class="btn btn-ghost btn-sm gap-1">
-              <.icon name="hero-arrow-down-tray" class="w-4 h-4" />
-              Export
-            </button>
+          <div class="hidden md:flex items-center gap-3">
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-base-200/50">
+              <.node_selector
+                selected_node={@selected_node}
+                available_nodes={@available_nodes}
+              />
+            </div>
+            <div class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-base-200/30 text-sm text-base-content/60">
+              <.icon name="hero-clock" class="w-4 h-4 text-base-content/40" />
+              <.timestamp value={@last_updated} />
+            </div>
+            <div class="flex items-center gap-1 border-l border-base-300/50 pl-3">
+              <.timezone_toggle />
+              <.theme_toggle />
+              <button
+                type="button"
+                phx-click="export_data"
+                class="btn btn-ghost btn-sm gap-2 hover:bg-base-200/50"
+              >
+                <.icon name="hero-arrow-down-tray" class="w-4 h-4" />
+                <span class="hidden xl:inline">Export</span>
+              </button>
+            </div>
           </div>
           <%!-- Mobile settings button --%>
           <button
             type="button"
             phx-click="toggle_settings"
-            class="btn btn-ghost btn-sm btn-square md:hidden"
+            class="btn btn-ghost btn-sm btn-square hover:bg-base-200 md:hidden"
             aria-label="Open settings"
           >
             <.icon name="hero-cog-6-tooth" class="w-5 h-5" />
@@ -413,8 +519,7 @@ defmodule BeamlensWeb.DashboardLive do
 
       <.source_sidebar
         selected_source={@selected_source}
-        operators={@operators}
-        coordinator_status={@coordinator_status}
+        analysis_running={@analysis_running}
         notification_count={@notification_counts.total}
         insight_count={length(@insights)}
         mobile_open={@sidebar_open}
@@ -427,7 +532,7 @@ defmodule BeamlensWeb.DashboardLive do
         last_updated={@last_updated}
       />
 
-      <main class="flex-1 overflow-y-auto p-4 md:p-6 bg-base-100">
+      <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-gradient-to-br from-base-100 to-base-200/30">
         <.main_panel
           selected_source={@selected_source}
           operators={@operators}
@@ -439,6 +544,11 @@ defmodule BeamlensWeb.DashboardLive do
           notifications={@notifications}
           insights={@insights}
           coordinator_status={@coordinator_status}
+          trigger_context={@trigger_context}
+          available_skills={@available_skills}
+          selected_skills={@selected_skills}
+          analysis_running={@analysis_running}
+          analysis_result={@analysis_result}
         />
       </main>
     </div>
@@ -553,20 +663,38 @@ defmodule BeamlensWeb.DashboardLive do
   # Main panel rendering based on selected source
   defp main_panel(assigns) do
     ~H"""
-    <div class="flex flex-col gap-4 h-full">
-      <.panel_header
-        selected_source={@selected_source}
-        operators={@operators}
-        event_type_filter={@event_type_filter}
-        event_sources={@event_sources}
-        events_paused={@events_paused}
-      />
+    <div class="flex flex-col gap-4 h-full min-h-0">
+      <%= if @selected_source == :trigger do %>
+        <div class="shrink-0">
+          <.trigger_form
+            trigger_context={@trigger_context}
+            available_skills={@available_skills}
+            selected_skills={@selected_skills}
+            analysis_running={@analysis_running}
+          />
+        </div>
 
-      <%= if @selected_source == :coordinator do %>
-        <.coordinator_panel status={@coordinator_status} />
+        <div class="flex-1 min-h-0 overflow-y-auto">
+          <.analysis_results
+            result={@analysis_result}
+            analysis_running={@analysis_running}
+          />
+        </div>
+      <% else %>
+        <.panel_header
+          selected_source={@selected_source}
+          operators={@operators}
+          event_type_filter={@event_type_filter}
+          event_sources={@event_sources}
+          events_paused={@events_paused}
+        />
+
+        <%= if @selected_source == :coordinator do %>
+          <.coordinator_panel status={@coordinator_status} />
+        <% end %>
+
+        <.event_list events={@filtered_events} selected_event_id={@selected_event_id} />
       <% end %>
-
-      <.event_list events={@filtered_events} selected_event_id={@selected_event_id} />
     </div>
     """
   end
@@ -675,7 +803,7 @@ defmodule BeamlensWeb.DashboardLive do
   defp panel_title(operator, operators) when is_atom(operator) do
     case Enum.find(operators, &(&1.operator == operator)) do
       %{title: title} when is_binary(title) -> "#{title} Activity"
-      _ -> "#{operator |> Atom.to_string() |> String.capitalize()} Activity"
+      _ -> "#{operator |> Module.split() |> List.last()} Activity"
     end
   end
 
@@ -708,7 +836,8 @@ defmodule BeamlensWeb.DashboardLive do
   defp maybe_add_param(params, _key, nil), do: params
   defp maybe_add_param(params, key, value), do: [{key, value} | params]
 
-  defp source_to_string(:all), do: nil
+  defp source_to_string(:trigger), do: nil
+  defp source_to_string(:all), do: "all"
   defp source_to_string(:notifications), do: "notifications"
   defp source_to_string(:insights), do: "insights"
   defp source_to_string(:coordinator), do: "coordinator"
@@ -717,8 +846,9 @@ defmodule BeamlensWeb.DashboardLive do
   defp type_to_string(nil), do: nil
   defp type_to_string(type) when is_atom(type), do: Atom.to_string(type)
 
-  defp parse_source_param(nil, _operators), do: :all
+  defp parse_source_param(nil, _operators), do: :trigger
   defp parse_source_param("all", _operators), do: :all
+  defp parse_source_param("trigger", _operators), do: :trigger
   defp parse_source_param("notifications", _operators), do: :notifications
   defp parse_source_param("insights", _operators), do: :insights
   defp parse_source_param("coordinator", _operators), do: :coordinator
@@ -898,6 +1028,40 @@ defmodule BeamlensWeb.DashboardLive do
   defp get_nodes do
     [Node.self() | Node.list()]
   end
+
+  defp load_available_skills(node) do
+    case rpc_call(node, Beamlens.Operator.Supervisor, :builtin_skills, []) do
+      {:ok, skill_modules} ->
+        skill_modules
+        |> Enum.map(fn module ->
+          %{
+            module: module,
+            title: safe_call(node, module, :title, format_module_name(module)),
+            description: safe_call(node, module, :description, "")
+          }
+        end)
+        |> Enum.sort_by(& &1.title)
+
+      {:error, _} ->
+        []
+    end
+  end
+
+  defp safe_call(node, module, function, default) do
+    case rpc_call(node, module, function, []) do
+      {:ok, result} -> result
+      {:error, _} -> default
+    end
+  end
+
+  defp format_module_name(module) when is_atom(module) do
+    module
+    |> Module.split()
+    |> List.last()
+    |> String.upcase()
+  end
+
+  defp format_module_name(module), do: to_string(module)
 
   defp subscribe_to_telemetry do
     pid = self()

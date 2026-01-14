@@ -74,8 +74,8 @@ defmodule BeamlensWeb.EventComponents do
         <span class="text-base-content/70 font-medium shrink-0 hidden md:inline">
           <%= format_source(@event.source) %>
         </span>
-        <span class="text-base-content flex-1 truncate min-w-0">
-          <%= format_event_details(@event) %>
+        <span class={["text-base-content flex-1 min-w-0", if(@expanded, do: "whitespace-normal", else: "truncate")]}>
+          <%= format_event_details(@event, @expanded) %>
         </span>
         <%= if @event.trace_id do %>
           <span class="font-mono text-xs text-base-content/50 shrink-0 hidden lg:inline" title={"Trace: #{@event.trace_id}"}>
@@ -248,54 +248,70 @@ defmodule BeamlensWeb.EventComponents do
   defp format_source(source) when is_atom(source), do: Atom.to_string(source)
   defp format_source(source), do: to_string(source)
 
-  defp format_event_details(%{event_type: :iteration_start, source: :coordinator, metadata: meta}) do
+  defp format_event_details(event, expanded)
+
+  defp format_event_details(
+         %{event_type: :iteration_start, source: :coordinator, metadata: meta},
+         _expanded
+       ) do
     "Analysis iteration ##{meta[:iteration]} (#{meta[:notification_count]} notifications)"
   end
 
-  defp format_event_details(%{event_type: :iteration_start, metadata: meta}) do
+  defp format_event_details(%{event_type: :iteration_start, metadata: meta}, _expanded) do
     "Iteration ##{meta[:iteration] || "?"} started (#{meta[:operator_state] || "?"})"
   end
 
-  defp format_event_details(%{event_type: :state_change, metadata: meta}) do
+  defp format_event_details(%{event_type: :state_change, metadata: meta}, _expanded) do
     "#{meta[:from]} → #{meta[:to]}" <>
       if(meta[:reason], do: " (#{truncate(meta[:reason], 30)})", else: "")
   end
 
-  defp format_event_details(%{event_type: :notification_sent, metadata: meta}) do
+  defp format_event_details(%{event_type: :notification_sent, metadata: meta}, _expanded) do
     "#{meta[:severity]} notification: #{meta[:anomaly_type]}"
   end
 
-  defp format_event_details(%{event_type: :take_snapshot, metadata: meta}) do
+  defp format_event_details(%{event_type: :take_snapshot, metadata: meta}, _expanded) do
     "Captured snapshot #{String.slice(meta[:snapshot_id] || "", 0..7)}"
   end
 
-  defp format_event_details(%{event_type: :wait, metadata: meta}) do
+  defp format_event_details(%{event_type: :wait, metadata: meta}, _expanded) do
     "Sleeping #{meta[:ms]}ms"
   end
 
-  defp format_event_details(%{event_type: :think, metadata: _meta}) do
+  defp format_event_details(%{event_type: :think, metadata: _meta}, _expanded) do
     "Recorded thought"
   end
 
-  defp format_event_details(%{event_type: :llm_error, metadata: meta}) do
+  defp format_event_details(%{event_type: :llm_error, metadata: meta}, _expanded) do
     "LLM error: #{truncate(meta[:reason], 40)}"
   end
 
-  defp format_event_details(%{event_type: :notification_received, metadata: meta}) do
-    "Notification #{String.slice(meta[:notification_id] || "", 0..7)} from #{meta[:operator]}"
+  defp format_event_details(%{event_type: :notification_received, metadata: meta}, _expanded) do
+    operator_name = format_operator_name(meta[:operator])
+    "Notification #{String.slice(meta[:notification_id] || "", 0..7)} from #{operator_name}"
   end
 
-  defp format_event_details(%{event_type: :insight_produced, metadata: meta}) do
-    "Insight #{String.slice(meta[:insight_id] || "", 0..7)} (#{meta[:correlation_type]})"
+  defp format_event_details(%{event_type: :insight_produced, metadata: meta}, expanded) do
+    if expanded do
+      meta[:summary] || ""
+    else
+      truncate(meta[:summary], 80)
+    end
   end
 
-  defp format_event_details(%{event_type: :done, metadata: meta}) do
+  defp format_event_details(%{event_type: :done, metadata: meta}, _expanded) do
     "Analysis complete" <> if(meta[:has_unread], do: " (has unread)", else: "")
   end
 
-  defp format_event_details(_event) do
+  defp format_event_details(_event, _expanded) do
     ""
   end
+
+  defp format_operator_name(name) when is_atom(name) do
+    name |> Module.split() |> List.last()
+  end
+
+  defp format_operator_name(name), do: to_string(name)
 
   defp truncate(nil, _max), do: ""
 
