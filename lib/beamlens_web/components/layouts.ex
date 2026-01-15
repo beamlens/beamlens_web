@@ -20,11 +20,11 @@ defmodule BeamlensWeb.Layouts do
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="csrf-token" content={Phoenix.Controller.get_csrf_token()} />
         <title>beamlens</title>
-        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
-        <link rel="apple-touch-icon" href="/images/logo/apple-touch-icon.png" />
-        <link rel="stylesheet" href="/assets/app.css" />
+        <link rel="icon" type="image/x-icon" href="/_beamlens_web/favicon.ico" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/_beamlens_web/favicon-32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/_beamlens_web/favicon-16.png" />
+        <link rel="apple-touch-icon" href="/_beamlens_web/images/logo/apple-touch-icon.png" />
+        <link rel="stylesheet" href={"/_beamlens_web/css-#{BeamlensWeb.Assets.current_hash(:css)}"} />
         <script>
           // Apply theme before first paint to prevent flash
           (function() {

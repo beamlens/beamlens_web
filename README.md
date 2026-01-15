@@ -33,7 +33,7 @@ import BeamlensWeb.Router
 
 scope "/" do
   pipe_through :browser
-  beamlens_dashboard "/dashboard"
+  beamlens_web "/dashboard"
 end
 ```
 
