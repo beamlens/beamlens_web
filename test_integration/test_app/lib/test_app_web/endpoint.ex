@@ -1,0 +1,19 @@
+defmodule TestAppWeb.Endpoint do
+  use Phoenix.Endpoint, otp_app: :test_app
+
+  plug Plug.Static,
+    at: "/",
+    from: :beamlens_web,
+    gzip: false,
+    only: ~w(assets images favicon.ico favicon-16.png favicon-32.png)
+
+  plug Plug.Parsers,
+    parsers: [:urlencoded, :multipart],
+    pass: ["*/*"],
+    json_decoder: Jason
+
+  plug Plug.MethodOverride
+  plug Plug.Head
+  plug Plug.Session, store: :cookie, key: "_test_app_key", signing_salt: "test_signing_salt"
+  plug TestAppWeb.Router
+end
