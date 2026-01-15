@@ -45,7 +45,7 @@ defmodule BeamlensWeb.MixProject do
       {:phoenix_live_view, "~> 1.0"},
       {:phoenix_html, "~> 4.0"},
       {:req, "~> 0.5"},
-      {:beamlens, path: "../beamlens"}
+      {:beamlens, "~> 0.2"}
     ]
   end
 end
