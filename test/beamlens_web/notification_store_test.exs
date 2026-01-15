@@ -32,7 +32,9 @@ defmodule BeamlensWeb.NotificationStoreTest do
 
       notifications = NotificationStore.list_notifications()
       assert length(notifications) == 2
-      assert DateTime.compare(hd(notifications).detected_at, List.last(notifications).detected_at) == :gt
+
+      assert DateTime.compare(hd(notifications).detected_at, List.last(notifications).detected_at) ==
+               :gt
     end
 
     test "filters notifications by status" do
@@ -42,7 +44,10 @@ defmodule BeamlensWeb.NotificationStoreTest do
       _notif2 = emit_notification(now, "notif-2")
 
       # Manually update status
-      :ets.insert(:beamlens_web_notifications, {notif1.id, Map.put(notif1, :status, :acknowledged)})
+      :ets.insert(
+        :beamlens_web_notifications,
+        {notif1.id, Map.put(notif1, :status, :acknowledged)}
+      )
 
       all = NotificationStore.list_notifications()
       unread = NotificationStore.list_notifications(:unread)
@@ -72,7 +77,12 @@ defmodule BeamlensWeb.NotificationStoreTest do
 
       # Update statuses
       :ets.insert(:beamlens_web_notifications, {notif1.id, Map.put(notif1, :status, :unread)})
-      :ets.insert(:beamlens_web_notifications, {notif2.id, Map.put(notif2, :status, :acknowledged)})
+
+      :ets.insert(
+        :beamlens_web_notifications,
+        {notif2.id, Map.put(notif2, :status, :acknowledged)}
+      )
+
       :ets.insert(:beamlens_web_notifications, {notif3.id, Map.put(notif3, :status, :resolved)})
 
       counts = NotificationStore.counts()
@@ -111,7 +121,10 @@ defmodule BeamlensWeb.NotificationStoreTest do
       notif1 = emit_notification(now, "notif-1")
 
       # Update status
-      :ets.insert(:beamlens_web_notifications, {notif1.id, Map.put(notif1, :status, :acknowledged)})
+      :ets.insert(
+        :beamlens_web_notifications,
+        {notif1.id, Map.put(notif1, :status, :acknowledged)}
+      )
 
       unread = NotificationStore.notifications_callback(:unread)
       acknowledged = NotificationStore.notifications_callback(:acknowledged)

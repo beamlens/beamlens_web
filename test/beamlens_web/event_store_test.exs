@@ -26,13 +26,21 @@ defmodule BeamlensWeb.EventStoreTest do
       now = DateTime.utc_now()
       earlier = DateTime.add(now, -1, :second)
 
-      emit_event([:beamlens, :operator, :iteration_start], %{
-        system_time: DateTime.to_unix(earlier, :native)
-      }, %{operator: :op1, iteration: 1})
+      emit_event(
+        [:beamlens, :operator, :iteration_start],
+        %{
+          system_time: DateTime.to_unix(earlier, :native)
+        },
+        %{operator: :op1, iteration: 1}
+      )
 
-      emit_event([:beamlens, :operator, :state_change], %{
-        system_time: DateTime.to_unix(now, :native)
-      }, %{operator: :op1, from: :idle, to: :running})
+      emit_event(
+        [:beamlens, :operator, :state_change],
+        %{
+          system_time: DateTime.to_unix(now, :native)
+        },
+        %{operator: :op1, from: :idle, to: :running}
+      )
 
       events = EventStore.list_events()
       assert length(events) == 2
@@ -41,13 +49,21 @@ defmodule BeamlensWeb.EventStoreTest do
     end
 
     test "filters events by source" do
-      emit_event([:beamlens, :operator, :iteration_start], %{
-        system_time: DateTime.to_unix(DateTime.utc_now(), :native)
-      }, %{operator: :op1, iteration: 1})
+      emit_event(
+        [:beamlens, :operator, :iteration_start],
+        %{
+          system_time: DateTime.to_unix(DateTime.utc_now(), :native)
+        },
+        %{operator: :op1, iteration: 1}
+      )
 
-      emit_event([:beamlens, :coordinator, :iteration_start], %{
-        system_time: DateTime.to_unix(DateTime.utc_now(), :native)
-      }, %{iteration: 1, notification_count: 0})
+      emit_event(
+        [:beamlens, :coordinator, :iteration_start],
+        %{
+          system_time: DateTime.to_unix(DateTime.utc_now(), :native)
+        },
+        %{iteration: 1, notification_count: 0}
+      )
 
       op_events = EventStore.list_events(:op1)
       coordinator_events = EventStore.list_events(:coordinator)
@@ -65,13 +81,21 @@ defmodule BeamlensWeb.EventStoreTest do
     end
 
     test "returns count of stored events" do
-      emit_event([:beamlens, :operator, :iteration_start], %{
-        system_time: DateTime.to_unix(DateTime.utc_now(), :native)
-      }, %{operator: :op1, iteration: 1})
+      emit_event(
+        [:beamlens, :operator, :iteration_start],
+        %{
+          system_time: DateTime.to_unix(DateTime.utc_now(), :native)
+        },
+        %{operator: :op1, iteration: 1}
+      )
 
-      emit_event([:beamlens, :operator, :state_change], %{
-        system_time: DateTime.to_unix(DateTime.utc_now(), :native)
-      }, %{operator: :op1, from: :idle, to: :running})
+      emit_event(
+        [:beamlens, :operator, :state_change],
+        %{
+          system_time: DateTime.to_unix(DateTime.utc_now(), :native)
+        },
+        %{operator: :op1, from: :idle, to: :running}
+      )
 
       assert EventStore.count() == 2
     end
@@ -79,9 +103,13 @@ defmodule BeamlensWeb.EventStoreTest do
 
   describe "events_callback/1" do
     test "returns events callback data" do
-      emit_event([:beamlens, :operator, :iteration_start], %{
-        system_time: DateTime.to_unix(DateTime.utc_now(), :native)
-      }, %{operator: :op1, iteration: 1})
+      emit_event(
+        [:beamlens, :operator, :iteration_start],
+        %{
+          system_time: DateTime.to_unix(DateTime.utc_now(), :native)
+        },
+        %{operator: :op1, iteration: 1}
+      )
 
       events = EventStore.events_callback()
       assert length(events) == 1
@@ -90,9 +118,13 @@ defmodule BeamlensWeb.EventStoreTest do
 
   describe "handle_telemetry_event/4" do
     test "stores operator iteration_start event" do
-      emit_event([:beamlens, :operator, :iteration_start], %{
-        system_time: DateTime.to_unix(DateTime.utc_now(), :native)
-      }, %{operator: :test_op, iteration: 5, operator_state: :running})
+      emit_event(
+        [:beamlens, :operator, :iteration_start],
+        %{
+          system_time: DateTime.to_unix(DateTime.utc_now(), :native)
+        },
+        %{operator: :test_op, iteration: 5, operator_state: :running}
+      )
 
       [event] = EventStore.list_events()
       assert event.event_type == :iteration_start
@@ -102,9 +134,13 @@ defmodule BeamlensWeb.EventStoreTest do
     end
 
     test "stores operator state_change event" do
-      emit_event([:beamlens, :operator, :state_change], %{
-        system_time: DateTime.to_unix(DateTime.utc_now(), :native)
-      }, %{operator: :test_op, from: :idle, to: :running, reason: :auto_start})
+      emit_event(
+        [:beamlens, :operator, :state_change],
+        %{
+          system_time: DateTime.to_unix(DateTime.utc_now(), :native)
+        },
+        %{operator: :test_op, from: :idle, to: :running, reason: :auto_start}
+      )
 
       [event] = EventStore.list_events()
       assert event.event_type == :state_change
@@ -117,9 +153,13 @@ defmodule BeamlensWeb.EventStoreTest do
       notification = build_notification("notif-1")
       insight = build_insight("insight-1", [notification.id])
 
-      emit_event([:beamlens, :coordinator, :insight_produced], %{
-        system_time: DateTime.to_unix(DateTime.utc_now(), :native)
-      }, %{insight: insight})
+      emit_event(
+        [:beamlens, :coordinator, :insight_produced],
+        %{
+          system_time: DateTime.to_unix(DateTime.utc_now(), :native)
+        },
+        %{insight: insight}
+      )
 
       [event] = EventStore.list_events()
       assert event.event_type == :insight_produced

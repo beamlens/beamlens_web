@@ -852,6 +852,7 @@ defmodule BeamlensWeb.DashboardLive do
   defp parse_source_param("notifications", _operators), do: :notifications
   defp parse_source_param("insights", _operators), do: :insights
   defp parse_source_param("coordinator", _operators), do: :coordinator
+
   defp parse_source_param(source, operators) do
     operator_names = Enum.map(operators, & &1.operator)
 
@@ -864,6 +865,7 @@ defmodule BeamlensWeb.DashboardLive do
   end
 
   defp parse_type_param(nil), do: nil
+
   defp parse_type_param(type) do
     try do
       String.to_existing_atom(type)

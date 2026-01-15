@@ -35,7 +35,7 @@ defmodule BeamlensWeb.CoreComponentsTest do
     end
 
     test "formats time days ago" do
-      dt = DateTime.utc_now() |> DateTime.add(-100000, :second)
+      dt = DateTime.utc_now() |> DateTime.add(-100_000, :second)
       assert CoreComponents.format_relative(dt) =~ "d ago"
     end
 
