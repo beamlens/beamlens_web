@@ -4,8 +4,7 @@ defmodule TestApp.Application do
   def start(_type, _args) do
     children = [
       TestAppWeb.Endpoint,
-      {Beamlens.Supervisor, []},
-      BeamlensWeb.Application
+      {Beamlens.Supervisor, []}
     ]
 
     opts = [strategy: :one_for_one, name: TestApp.Supervisor]
