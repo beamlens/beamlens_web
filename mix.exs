@@ -44,6 +44,8 @@ defmodule BeamlensWeb.MixProject do
       {:phoenix, "~> 1.7"},
       {:phoenix_live_view, "~> 1.0"},
       {:phoenix_html, "~> 4.0"},
+      {:bandit, "~> 1.0", only: :test},
+      {:jason, "~> 1.4"},
       {:req, "~> 0.5"},
       {:beamlens, "~> 0.2"}
     ]
