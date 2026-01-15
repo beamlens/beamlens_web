@@ -13,7 +13,10 @@ defmodule BeamlensWeb.MixProject do
       description: description(),
       package: package(),
       name: "BeamlensWeb",
-      source_url: "https://github.com/beamlens/beamlens_web"
+      source_url: "https://github.com/beamlens/beamlens_web",
+      test_pattern: "**/*_test.exs",
+      test_test_paths: ["test"],
+      test_ignore_filters: [~r/test\/support\/.*/]
     ]
   end
 
