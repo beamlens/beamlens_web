@@ -7,7 +7,7 @@ defmodule BeamlensWeb do
 
   Add `:beamlens_web` as a dependency in your Phoenix application:
 
-      {:beamlens_web, path: "../beamlens_web"}
+      {:beamlens_web, "~> 0.1"}
 
   Then mount the dashboard in your router:
 
