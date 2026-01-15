@@ -65,7 +65,7 @@ defmodule BeamlensWeb.DashboardLive do
 
   @impl true
   def handle_event("select_source", %{"source" => source}, socket) do
-    source_atom = parse_source_string(source, socket.assigns.operators)
+    source_atom = parse_source_param(source, socket.assigns.operators)
 
     {:noreply,
      socket
@@ -153,15 +153,13 @@ defmodule BeamlensWeb.DashboardLive do
     {:noreply, push_event(socket, "download", %{content: json, filename: filename})}
   end
 
-  def handle_event("copy_to_clipboard", %{"text" => text, "copy-id" => copy_id}, socket) do
+  def handle_event("copy_to_clipboard", %{"text" => text} = params, socket) do
+    copy_id = Map.get(params, "copy-id")
     {:noreply, push_event(socket, "copy", %{text: text, copyId: copy_id})}
   end
 
-  def handle_event("copy_to_clipboard", %{"text" => text}, socket) do
-    {:noreply, push_event(socket, "copy", %{text: text, copyId: nil})}
-  end
-
-  def handle_event("copy_record", %{"data" => data, "copy-id" => copy_id}, socket) do
+  def handle_event("copy_record", %{"data" => data} = params, socket) do
+    copy_id = Map.get(params, "copy-id")
     # Format JSON nicely for readability
     formatted =
       data
@@ -169,16 +167,6 @@ defmodule BeamlensWeb.DashboardLive do
       |> Jason.encode!(pretty: true)
 
     {:noreply, push_event(socket, "copy", %{text: formatted, copyId: copy_id})}
-  end
-
-  def handle_event("copy_record", %{"data" => data}, socket) do
-    # Format JSON nicely for readability
-    formatted =
-      data
-      |> Jason.decode!()
-      |> Jason.encode!(pretty: true)
-
-    {:noreply, push_event(socket, "copy", %{text: formatted, copyId: nil})}
   end
 
   def handle_event("restart_operator", %{"operator" => operator_str}, socket) do
@@ -836,8 +824,8 @@ defmodule BeamlensWeb.DashboardLive do
   defp build_url(source, type_filter) do
     params =
       []
-      |> maybe_add_param(:source, source_to_string(source))
-      |> maybe_add_param(:type, type_to_string(type_filter))
+      |> add_param_if_value("source", source_to_string(source))
+      |> add_param_if_value("type", type_to_string(type_filter))
 
     case params do
       [] -> "/dashboard"
@@ -845,8 +833,8 @@ defmodule BeamlensWeb.DashboardLive do
     end
   end
 
-  defp maybe_add_param(params, _key, nil), do: params
-  defp maybe_add_param(params, key, value), do: [{key, value} | params]
+  defp add_param_if_value(params, _key, nil), do: params
+  defp add_param_if_value(params, key, value), do: [{key, value} | params]
 
   defp source_to_string(:trigger), do: nil
   defp source_to_string(:all), do: "all"
@@ -864,7 +852,6 @@ defmodule BeamlensWeb.DashboardLive do
   defp parse_source_param("notifications", _operators), do: :notifications
   defp parse_source_param("insights", _operators), do: :insights
   defp parse_source_param("coordinator", _operators), do: :coordinator
-
   defp parse_source_param(source, operators) do
     operator_names = Enum.map(operators, & &1.operator)
 
@@ -876,10 +863,7 @@ defmodule BeamlensWeb.DashboardLive do
     end
   end
 
-  defp parse_source_string(source, operators), do: parse_source_param(source, operators)
-
   defp parse_type_param(nil), do: nil
-
   defp parse_type_param(type) do
     try do
       String.to_existing_atom(type)
