@@ -394,13 +394,25 @@ defmodule BeamlensWeb.DashboardLive do
     liveview_pid = self()
 
     Task.start(fn ->
+      require Logger
+
+      Logger.info(
+        "[Dashboard] Starting analysis task for node=#{node}, skills=#{inspect(skills)}"
+      )
+
       result =
         try do
-          :erpc.call(node, Beamlens.Coordinator, :run, [context, [skills: skills]], 300_000)
+          opts = [skills: skills, max_iterations: 20]
+          res = :erpc.call(node, Beamlens.Coordinator, :run, [context, opts], 300_000)
+          Logger.info("[Dashboard] Analysis completed: #{inspect(res, limit: 3)}")
+          res
         catch
-          :exit, reason -> {:error, reason}
+          :exit, reason ->
+            Logger.error("[Dashboard] Analysis failed: #{inspect(reason)}")
+            {:error, reason}
         end
 
+      Logger.info("[Dashboard] Sending result to LiveView pid=#{inspect(liveview_pid)}")
       send(liveview_pid, {:analysis_complete, result})
     end)
 
@@ -987,22 +999,9 @@ defmodule BeamlensWeb.DashboardLive do
     end
   end
 
-  defp fetch_coordinator_status(node) do
-    # Check if the coordinator process exists
-    process_running =
-      case rpc_call(node, Process, :whereis, [Beamlens.Coordinator]) do
-        {:ok, pid} when is_pid(pid) -> true
-        _ -> false
-      end
-
-    case rpc_call(node, Beamlens.Coordinator, :status, []) do
-      {:ok, status} ->
-        # Override running to reflect process existence, not loop activity
-        Map.put(status, :running, process_running)
-
-      {:error, _reason} ->
-        %{running: false, notification_count: 0, unread_count: 0, iteration: 0}
-    end
+  defp fetch_coordinator_status(_node) do
+    # No persistent coordinator - one-shot coordinators are spawned via Coordinator.run/2
+    %{running: false, notification_count: 0, unread_count: 0, iteration: 0}
   end
 
   defp fetch_events(node) do

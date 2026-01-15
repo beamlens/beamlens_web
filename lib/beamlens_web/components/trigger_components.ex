@@ -53,16 +53,17 @@ defmodule BeamlensWeb.TriggerComponents do
             <.icon name="hero-document-text" class="w-4 h-4 text-primary/60" />
             Analysis Context
           </label>
-          <textarea
-            id="trigger-context"
-            name="context"
-            rows="3"
-            phx-change="update_trigger_context"
-            phx-debounce="300"
-            class="textarea w-full text-base-content bg-base-200/50 border-base-300 focus:border-primary focus:bg-base-100 focus:ring-2 focus:ring-primary/20 rounded-xl transition-all duration-200 placeholder:text-base-content/40"
-            placeholder="Describe what you want to investigate (e.g., 'High memory usage detected', 'Check system health', 'Investigate slow queries')..."
-            disabled={@analysis_running}
-          ><%= @trigger_context %></textarea>
+          <form phx-change="update_trigger_context">
+            <textarea
+              id="trigger-context"
+              name="context"
+              rows="3"
+              phx-debounce="300"
+              class="textarea w-full text-base-content bg-base-200/50 border-base-300 focus:border-primary focus:bg-base-100 focus:ring-2 focus:ring-primary/20 rounded-xl transition-all duration-200 placeholder:text-base-content/40"
+              placeholder="Describe what you want to investigate (e.g., 'High memory usage detected', 'Check system health', 'Investigate slow queries')..."
+              disabled={@analysis_running}
+            ><%= @trigger_context %></textarea>
+          </form>
         </div>
 
         <div>
