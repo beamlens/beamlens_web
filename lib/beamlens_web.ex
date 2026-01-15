@@ -15,7 +15,7 @@ defmodule BeamlensWeb do
 
       scope "/" do
         pipe_through :browser
-        live_beamlens_dashboard "/dashboard"
+        beamlens_web "/dashboard"
       end
 
   Navigate to `/dashboard` to view the BeamLens monitoring dashboard.
