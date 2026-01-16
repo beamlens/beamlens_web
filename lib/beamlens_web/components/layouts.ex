@@ -37,7 +37,9 @@ defmodule BeamlensWeb.Layouts do
             document.documentElement.setAttribute('data-theme-mode', stored || 'system');
           })();
         </script>
-        <script defer src="/assets/js/app.js"></script>
+        <script defer src={"/_beamlens_web/phoenix-#{BeamlensWeb.Assets.current_hash(:phoenix_js)}"}></script>
+        <script defer src={"/_beamlens_web/live_view-#{BeamlensWeb.Assets.current_hash(:live_view_js)}"}></script>
+        <script defer src={"/_beamlens_web/app-#{BeamlensWeb.Assets.current_hash(:app_js)}"}></script>
         <style>
           /* Copyable field styles */
           .copyable-field { cursor: text; }

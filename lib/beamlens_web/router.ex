@@ -39,7 +39,10 @@ defmodule BeamlensWeb.Router do
       import Phoenix.Router, only: [get: 4, forward: 3, scope: 3]
 
 
-      get("/_beamlens_web/css-:md5", BeamlensWeb.Assets, :css, as: :beamlens_web_asset)
+      get("/_beamlens_web/css-:md5", BeamlensWeb.Assets, :css, as: :beamlens_web_css)
+      get("/_beamlens_web/phoenix-:md5", BeamlensWeb.Assets, :phoenix_js, as: :beamlens_web_phoenix_js)
+      get("/_beamlens_web/live_view-:md5", BeamlensWeb.Assets, :live_view_js, as: :beamlens_web_live_view_js)
+      get("/_beamlens_web/app-:md5", BeamlensWeb.Assets, :app_js, as: :beamlens_web_app_js)
 
 
       forward("/_beamlens_web", Plug.Static,
