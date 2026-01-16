@@ -9,11 +9,9 @@ defmodule BeamlensWeb.EventComponents do
   import BeamlensWeb.Icons
 
   @doc """
-  Renders a list of events with optional filtering.
+  Renders a list of events.
   """
   attr(:events, :list, required: true)
-  attr(:filter, :atom, default: nil)
-  attr(:source_filter, :atom, default: nil)
   attr(:selected_event_id, :string, default: nil)
 
   def event_list(assigns) do
@@ -212,7 +210,7 @@ defmodule BeamlensWeb.EventComponents do
     """
   end
 
-  # Private helper functions
+
 
   defp format_metadata_value(value) when is_binary(value), do: value
   defp format_metadata_value(value) when is_atom(value), do: Atom.to_string(value)

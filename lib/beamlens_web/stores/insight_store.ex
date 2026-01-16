@@ -11,7 +11,7 @@ defmodule BeamlensWeb.InsightStore do
   @table_name :beamlens_web_insights
   @telemetry_handler_id "beamlens-web-insight-store"
 
-  # Client API
+
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
@@ -44,12 +44,12 @@ defmodule BeamlensWeb.InsightStore do
   end
 
   @doc false
-  # RPC callback for remote node queries
+
   def insights_callback do
     list_insights()
   end
 
-  # Server Callbacks
+
 
   @impl true
   def init(_opts) do

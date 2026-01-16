@@ -12,30 +12,6 @@ defmodule BeamlensWeb.Router do
       end
   """
 
-  @valid_key "beamlens-early-2026"
-  @configured_key Application.compile_env(:beamlens_web, :access_key)
-
-  if @configured_key != @valid_key do
-    raise """
-
-    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-    BeamLens is in early access.
-
-    You're free to use the library, but all I ask is that you fill out this short
-    form so I know you're using it and can send you updates and get feedback:
-
-        https://forms.gle/HMy84HQ68TAUAoDx6
-
-    Then add to your config/config.exs:
-
-        config :beamlens_web, access_key: "beamlens-early-2026"
-
-    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-    """
-  end
-
   @doc """
   Defines a route to mount the BeamLens dashboard at the given path.
 
@@ -62,14 +38,15 @@ defmodule BeamlensWeb.Router do
     quote bind_quoted: binding() do
       import Phoenix.Router, only: [get: 4, forward: 3, scope: 3]
 
-      # Serve embedded CSS asset with cache-busting hash
-      get "/_beamlens_web/css-:md5", BeamlensWeb.Assets, :css, as: :beamlens_web_asset
 
-      # Serve static assets (images, favicons) from priv/static
-      forward "/_beamlens_web", Plug.Static,
+      get("/_beamlens_web/css-:md5", BeamlensWeb.Assets, :css, as: :beamlens_web_asset)
+
+
+      forward("/_beamlens_web", Plug.Static,
         at: "/",
         from: {:beamlens_web, "priv/static"},
         only: ~w(images favicon.ico favicon-16.png favicon-32.png)
+      )
 
       scope path, alias: false, as: false do
         import Phoenix.LiveView.Router, only: [live: 3, live: 4, live_session: 2, live_session: 3]

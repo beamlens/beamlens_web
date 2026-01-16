@@ -29,28 +29,28 @@ defmodule BeamlensWeb.CoreComponents do
     """
   end
 
-  # Maps semantic variants to DaisyUI badge classes
+
   defp variant_class(:healthy), do: "badge-success"
   defp variant_class(:observing), do: "badge-info"
   defp variant_class(:warning), do: "badge-warning"
   defp variant_class(:critical), do: "badge-error"
   defp variant_class(:idle), do: "badge-neutral"
-  # Notification severities
+
   defp variant_class(:info), do: "badge-info"
-  # Notification statuses
+
   defp variant_class(:unread), do: "badge-warning"
   defp variant_class(:acknowledged), do: "badge-info"
   defp variant_class(:resolved), do: "badge-success"
-  # Insight confidence
+
   defp variant_class(:high), do: "badge-success"
   defp variant_class(:medium), do: "badge-warning"
   defp variant_class(:low), do: "badge-neutral"
-  # Insight correlation types
+
   defp variant_class(:temporal), do: "badge-info"
   defp variant_class(:causal), do: "badge-primary"
   defp variant_class(:pattern), do: "badge-secondary"
   defp variant_class(:common_cause), do: "badge-accent"
-  # Fallback
+
   defp variant_class(_), do: "badge-neutral"
 
   @doc """

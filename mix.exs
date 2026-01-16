@@ -13,7 +13,10 @@ defmodule BeamlensWeb.MixProject do
       description: description(),
       package: package(),
       name: "BeamlensWeb",
-      source_url: "https://github.com/beamlens/beamlens_web"
+      source_url: "https://github.com/beamlens/beamlens_web",
+      test_pattern: "**/*_test.exs",
+      test_test_paths: ["test"],
+      test_ignore_filters: [~r/test\/support\/.*/]
     ]
   end
 
@@ -44,8 +47,10 @@ defmodule BeamlensWeb.MixProject do
       {:phoenix, "~> 1.7"},
       {:phoenix_live_view, "~> 1.0"},
       {:phoenix_html, "~> 4.0"},
+      {:bandit, "~> 1.0", only: :test},
+      {:jason, "~> 1.4"},
       {:req, "~> 0.5"},
-      {:beamlens, path: "../beamlens"}
+      {:beamlens, "~> 0.2"}
     ]
   end
 end
