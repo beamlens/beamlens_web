@@ -160,7 +160,7 @@ defmodule BeamlensWeb.DashboardLive do
 
   def handle_event("copy_record", %{"data" => data} = params, socket) do
     copy_id = Map.get(params, "copy-id")
-    # Format JSON nicely for readability
+    
     formatted =
       data
       |> Jason.decode!()
@@ -555,7 +555,7 @@ defmodule BeamlensWeb.DashboardLive do
     """
   end
 
-  # Mobile settings panel (right drawer)
+
   defp settings_panel(assigns) do
     ~H"""
     <%!-- Backdrop --%>
@@ -660,7 +660,7 @@ defmodule BeamlensWeb.DashboardLive do
     """
   end
 
-  # Main panel rendering based on selected source
+
   defp main_panel(assigns) do
     ~H"""
     <div class="flex flex-col gap-4 h-full min-h-0">
@@ -819,7 +819,7 @@ defmodule BeamlensWeb.DashboardLive do
     end
   end
 
-  # URL building and parsing
+
 
   defp build_url(source, type_filter) do
     params =
@@ -874,7 +874,7 @@ defmodule BeamlensWeb.DashboardLive do
     end
   end
 
-  # Filtering logic
+
 
   defp apply_filters(socket) do
     events = socket.assigns[:events] || []
@@ -909,7 +909,7 @@ defmodule BeamlensWeb.DashboardLive do
   defp filter_by_type(events, nil), do: events
   defp filter_by_type(events, type), do: Enum.filter(events, &(&1.event_type == type))
 
-  # Data fetching
+
 
   defp refresh_data(socket) do
     node = socket.assigns.selected_node
@@ -955,7 +955,7 @@ defmodule BeamlensWeb.DashboardLive do
     |> apply_filters()
   end
 
-  # RPC-based data fetching
+
 
   defp fetch_operators(node) do
     case rpc_call(node, Beamlens.Operator.Supervisor, :list_operators, []) do

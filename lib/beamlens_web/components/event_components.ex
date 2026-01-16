@@ -210,7 +210,7 @@ defmodule BeamlensWeb.EventComponents do
     """
   end
 
-  # Private helper functions
+
 
   defp format_metadata_value(value) when is_binary(value), do: value
   defp format_metadata_value(value) when is_atom(value), do: Atom.to_string(value)

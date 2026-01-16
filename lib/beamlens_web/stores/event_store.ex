@@ -41,7 +41,7 @@ defmodule BeamlensWeb.EventStore do
     [:beamlens, :coordinator, :llm_error]
   ]
 
-  # Client API
+
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
@@ -71,12 +71,12 @@ defmodule BeamlensWeb.EventStore do
   end
 
   @doc false
-  # RPC callback for remote node queries
+
   def events_callback(source \\ nil) do
     list_events(source)
   end
 
-  # Server Callbacks
+
 
   @impl true
   def init(_opts) do

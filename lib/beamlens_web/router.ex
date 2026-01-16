@@ -38,10 +38,10 @@ defmodule BeamlensWeb.Router do
     quote bind_quoted: binding() do
       import Phoenix.Router, only: [get: 4, forward: 3, scope: 3]
 
-      # Serve embedded CSS asset with cache-busting hash
+
       get("/_beamlens_web/css-:md5", BeamlensWeb.Assets, :css, as: :beamlens_web_asset)
 
-      # Serve static assets (images, favicons) from priv/static
+
       forward("/_beamlens_web", Plug.Static,
         at: "/",
         from: {:beamlens_web, "priv/static"},

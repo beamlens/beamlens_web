@@ -11,7 +11,7 @@ defmodule BeamlensWeb.NotificationStore do
   @table_name :beamlens_web_notifications
   @telemetry_handler_id "beamlens-web-notification-store"
 
-  # Client API
+
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
@@ -61,18 +61,18 @@ defmodule BeamlensWeb.NotificationStore do
   end
 
   @doc false
-  # RPC callback for remote node queries
+
   def notifications_callback(status \\ nil) do
     list_notifications(status)
   end
 
   @doc false
-  # RPC callback for remote node queries
+
   def notification_counts_callback do
     counts()
   end
 
-  # Server Callbacks
+
 
   @impl true
   def init(_opts) do
