@@ -3,6 +3,7 @@ defmodule TestApp.Application do
 
   def start(_type, _args) do
     children = [
+      {Phoenix.PubSub, name: TestApp.PubSub},
       TestAppWeb.Endpoint,
       {Beamlens.Supervisor, []}
     ]

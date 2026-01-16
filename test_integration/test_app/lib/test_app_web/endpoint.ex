@@ -1,6 +1,21 @@
 defmodule TestAppWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :test_app
 
+  @session_options [
+    store: :cookie,
+    key: "_test_app_key",
+    signing_salt: "test_signing_salt",
+    same_site: "Lax"
+  ]
+
+  socket "/live", Phoenix.LiveView.Socket,
+    websocket: [connect_info: [session: @session_options]],
+    longpoll: [connect_info: [session: @session_options]]
+
+  if Code.ensure_loaded?(Tidewave) do
+    plug(Tidewave)
+  end
+
   plug(Plug.Static,
     at: "/",
     from: :beamlens_web,
@@ -16,6 +31,6 @@ defmodule TestAppWeb.Endpoint do
 
   plug(Plug.MethodOverride)
   plug(Plug.Head)
-  plug(Plug.Session, store: :cookie, key: "_test_app_key", signing_salt: "test_signing_salt")
+  plug(Plug.Session, @session_options)
   plug(TestAppWeb.Router)
 end

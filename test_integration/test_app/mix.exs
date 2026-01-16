@@ -7,6 +7,7 @@ defmodule TestApp.MixProject do
       version: "0.1.0",
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
+      listeners: [Phoenix.CodeReloader],
       deps: deps()
     ]
   end
@@ -26,7 +27,8 @@ defmodule TestApp.MixProject do
       {:bandit, "~> 1.0"},
       {:jason, "~> 1.4"},
       {:beamlens, "~> 0.2"},
-      {:beamlens_web, path: "../../"}
+      {:beamlens_web, path: "../../"},
+      {:tidewave, "~> 0.5", only: :dev}
     ]
   end
 end
