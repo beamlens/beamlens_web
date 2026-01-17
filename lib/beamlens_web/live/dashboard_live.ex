@@ -11,12 +11,12 @@ defmodule BeamlensWeb.DashboardLive do
 
   use BeamlensWeb, :live_view
 
+  import BeamlensWeb.ChatComponents
   import BeamlensWeb.CoreComponents
   import BeamlensWeb.CoordinatorComponents
   import BeamlensWeb.EventComponents
   import BeamlensWeb.Icons
   import BeamlensWeb.SidebarComponents
-  import BeamlensWeb.TriggerComponents
 
   @refresh_interval 5_000
   @rpc_timeout 5_000
@@ -48,6 +48,9 @@ defmodule BeamlensWeb.DashboardLive do
      |> assign(:selected_skills, selected_skill_modules)
      |> assign(:analysis_running, false)
      |> assign(:analysis_result, nil)
+     |> assign(:analysis_task_pid, nil)
+     |> assign(:messages, [])
+     |> assign(:input_text, "")
      |> refresh_data()}
   end
 
@@ -369,6 +372,97 @@ defmodule BeamlensWeb.DashboardLive do
     {:noreply, assign(socket, :selected_skills, [])}
   end
 
+  def handle_event("toggle_skills_panel", _params, socket) do
+    {:noreply, assign(socket, :skills_panel_open, !socket.assigns.skills_panel_open)}
+  end
+
+  def handle_event("update_input", %{"message" => text}, socket) do
+    {:noreply, assign(socket, :input_text, text)}
+  end
+
+  def handle_event("send_message", %{"message" => text}, socket) do
+    text = String.trim(text)
+
+    if text == "" or socket.assigns.analysis_running do
+      {:noreply, socket}
+    else
+      user_message = %{
+        id: generate_message_id(),
+        role: :user,
+        content: text,
+        timestamp: DateTime.utc_now(),
+        skills_used: socket.assigns.selected_skills
+      }
+
+      node = socket.assigns.selected_node
+      context = %{reason: text}
+      skills = socket.assigns.selected_skills
+      liveview_pid = self()
+
+      task_pid =
+        spawn(fn ->
+          require Logger
+
+          Logger.info(
+            "[Dashboard] Starting chat analysis for node=#{node}, skills=#{inspect(skills)}"
+          )
+
+          result =
+            try do
+              opts = [skills: skills, max_iterations: 20]
+              res = :erpc.call(node, Beamlens.Coordinator, :run, [context, opts], 30_000)
+              Logger.info("[Dashboard] Chat analysis completed: #{inspect(res, limit: 3)}")
+              res
+            catch
+              kind, reason ->
+                Logger.error("[Dashboard] Chat analysis failed (#{kind}): #{inspect(reason)}")
+                {:error, format_error(kind, reason)}
+            end
+
+          Logger.info("[Dashboard] Sending result to LiveView pid=#{inspect(liveview_pid)}")
+          send(liveview_pid, {:analysis_complete, result})
+        end)
+
+      Process.monitor(task_pid)
+
+      socket =
+        socket
+        |> update(:messages, &(&1 ++ [user_message]))
+        |> assign(:input_text, "")
+        |> assign(:analysis_running, true)
+        |> assign(:analysis_task_pid, task_pid)
+
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("clear_chat", _params, socket) do
+    {:noreply, assign(socket, :messages, [])}
+  end
+
+  def handle_event("stop_analysis", _params, socket) do
+    if socket.assigns.analysis_task_pid do
+      Process.exit(socket.assigns.analysis_task_pid, :kill)
+    end
+
+    stopped_message = %{
+      id: generate_message_id(),
+      role: :coordinator,
+      content: "Stopped by user.",
+      timestamp: DateTime.utc_now(),
+      message_type: :text,
+      rendered_html: "<p>Stopped by user.</p>"
+    }
+
+    socket =
+      socket
+      |> assign(:analysis_running, false)
+      |> assign(:analysis_task_pid, nil)
+      |> update(:messages, &(&1 ++ [stopped_message]))
+
+    {:noreply, socket}
+  end
+
   def handle_event("trigger_analysis", _params, socket) do
     node = socket.assigns.selected_node
     context = %{reason: socket.assigns.trigger_context}
@@ -391,7 +485,7 @@ defmodule BeamlensWeb.DashboardLive do
       result =
         try do
           opts = [skills: skills, max_iterations: 20]
-          res = :erpc.call(node, Beamlens.Coordinator, :run, [context, opts], 300_000)
+          res = :erpc.call(node, Beamlens.Coordinator, :run, [context, opts], 30_000)
           Logger.info("[Dashboard] Analysis completed: #{inspect(res, limit: 3)}")
           res
         catch
@@ -422,10 +516,14 @@ defmodule BeamlensWeb.DashboardLive do
   end
 
   def handle_info({:analysis_complete, {:ok, result}}, socket) do
+    coordinator_messages = build_coordinator_messages(result)
+
     socket =
       socket
       |> assign(:analysis_running, false)
+      |> assign(:analysis_task_pid, nil)
       |> assign(:analysis_result, result)
+      |> update(:messages, &(&1 ++ coordinator_messages))
       |> put_flash(:info, "Analysis complete")
       |> refresh_data()
 
@@ -433,12 +531,68 @@ defmodule BeamlensWeb.DashboardLive do
   end
 
   def handle_info({:analysis_complete, {:error, reason}}, socket) do
+    error_text = format_error_reason(reason)
+
+    error_message = %{
+      id: generate_message_id(),
+      role: :coordinator,
+      content: error_text,
+      timestamp: DateTime.utc_now(),
+      message_type: :error
+    }
+
     socket =
       socket
       |> assign(:analysis_running, false)
-      |> put_flash(:error, "Analysis failed: #{inspect(reason)}")
+      |> assign(:analysis_task_pid, nil)
+      |> update(:messages, &(&1 ++ [error_message]))
+      |> put_flash(:error, error_text)
 
     {:noreply, socket}
+  end
+
+  def handle_info({:DOWN, _ref, :process, pid, reason}, socket) do
+    if socket.assigns.analysis_task_pid == pid and socket.assigns.analysis_running do
+      error_message = %{
+        id: generate_message_id(),
+        role: :coordinator,
+        content: "Analysis failed: #{format_error(:exit, reason)}",
+        timestamp: DateTime.utc_now(),
+        message_type: :error
+      }
+
+      socket =
+        socket
+        |> assign(:analysis_running, false)
+        |> assign(:analysis_task_pid, nil)
+        |> update(:messages, &(&1 ++ [error_message]))
+
+      {:noreply, socket}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_info({:puck_error, _event_name, metadata}, socket) do
+    if socket.assigns.analysis_running do
+      error_text = format_puck_error(metadata)
+
+      error_message = %{
+        id: generate_message_id(),
+        role: :coordinator,
+        content: error_text,
+        timestamp: DateTime.utc_now(),
+        message_type: :error
+      }
+
+      socket =
+        socket
+        |> update(:messages, &(&1 ++ [error_message]))
+
+      {:noreply, socket}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_info({:nodeup, _node, _info}, socket) do
@@ -532,7 +686,7 @@ defmodule BeamlensWeb.DashboardLive do
         last_updated={@last_updated}
       />
 
-      <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-gradient-to-br from-base-100 to-base-200/30">
+      <main class="flex-1 overflow-hidden p-4 md:p-6 lg:p-8 bg-gradient-to-br from-base-100 to-base-200/30">
         <.main_panel
           selected_source={@selected_source}
           operators={@operators}
@@ -549,6 +703,8 @@ defmodule BeamlensWeb.DashboardLive do
           selected_skills={@selected_skills}
           analysis_running={@analysis_running}
           analysis_result={@analysis_result}
+          messages={@messages}
+          input_text={@input_text}
         />
       </main>
     </div>
@@ -663,37 +819,31 @@ defmodule BeamlensWeb.DashboardLive do
 
   defp main_panel(assigns) do
     ~H"""
-    <div class="flex flex-col gap-4 h-full min-h-0">
+    <div class="flex flex-col h-full min-h-0">
       <%= if @selected_source == :trigger do %>
-        <div class="shrink-0">
-          <.trigger_form
-            trigger_context={@trigger_context}
-            available_skills={@available_skills}
-            selected_skills={@selected_skills}
-            analysis_running={@analysis_running}
-          />
-        </div>
-
-        <div class="flex-1 min-h-0 overflow-y-auto">
-          <.analysis_results
-            result={@analysis_result}
+        <div class="h-full rounded-2xl bg-base-100 border border-base-300 shadow-lg overflow-hidden">
+          <.chat_container
+            messages={@messages}
+            input_text={@input_text}
             analysis_running={@analysis_running}
           />
         </div>
       <% else %>
-        <.panel_header
-          selected_source={@selected_source}
-          operators={@operators}
-          event_type_filter={@event_type_filter}
-          event_sources={@event_sources}
-          events_paused={@events_paused}
-        />
+        <div class="flex flex-col gap-4 h-full min-h-0 overflow-y-auto">
+          <.panel_header
+            selected_source={@selected_source}
+            operators={@operators}
+            event_type_filter={@event_type_filter}
+            event_sources={@event_sources}
+            events_paused={@events_paused}
+          />
 
-        <%= if @selected_source == :coordinator do %>
-          <.coordinator_panel status={@coordinator_status} />
-        <% end %>
+          <%= if @selected_source == :coordinator do %>
+            <.coordinator_panel status={@coordinator_status} />
+          <% end %>
 
-        <.event_list events={@filtered_events} selected_event_id={@selected_event_id} />
+          <.event_list events={@filtered_events} selected_event_id={@selected_event_id} />
+        </div>
       <% end %>
     </div>
     """
@@ -1048,11 +1198,46 @@ defmodule BeamlensWeb.DashboardLive do
 
   defp format_module_name(module), do: to_string(module)
 
+  defp format_error(:exit, {:erpc, :timeout}), do: "Request timed out. Check if the coordinator is configured correctly."
+  defp format_error(:exit, :timeout), do: "Request timed out"
+  defp format_error(:exit, :normal), do: "Process exited normally"
+  defp format_error(:exit, :killed), do: "Process was killed"
+  defp format_error(:error, {:erpc, :timeout}), do: "Request timed out. Check if the coordinator is configured correctly."
+  defp format_error(:throw, reason), do: "Unexpected error: #{inspect(reason)}"
+  defp format_error(:error, reason), do: "Error: #{inspect(reason)}"
+  defp format_error(_kind, reason), do: inspect(reason)
+
+  defp format_error_reason(reason) when is_binary(reason), do: reason
+  defp format_error_reason(reason), do: inspect(reason)
+
+  defp format_puck_error(%{kind: kind, reason: reason}) do
+    case extract_llm_error(reason) do
+      nil -> "LLM error (#{kind}): #{inspect(reason)}"
+      message -> message
+    end
+  end
+
+  defp format_puck_error(metadata), do: "LLM error: #{inspect(metadata)}"
+
+  defp extract_llm_error(%{__exception__: true, message: message}), do: message
+
+  defp extract_llm_error(%Req.Response{status: status, body: body}) when status >= 400 do
+    error_message = get_in(body, ["error", "message"]) || inspect(body)
+    "API error (#{status}): #{error_message}"
+  end
+
+  defp extract_llm_error({:error, %Req.Response{status: status, body: body}}) when status >= 400 do
+    error_message = get_in(body, ["error", "message"]) || inspect(body)
+    "API error (#{status}): #{error_message}"
+  end
+
+  defp extract_llm_error(_), do: nil
+
   defp subscribe_to_telemetry do
     pid = self()
     handler_id = "beamlens-dashboard-#{inspect(pid)}"
 
-    events = [
+    beamlens_events = [
       [:beamlens, :operator, :state_change],
       [:beamlens, :operator, :notification_sent],
       [:beamlens, :coordinator, :insight_produced],
@@ -1061,9 +1246,25 @@ defmodule BeamlensWeb.DashboardLive do
 
     :telemetry.attach_many(
       handler_id,
-      events,
+      beamlens_events,
       fn event_name, _measurements, _metadata, _config ->
         send(pid, {:telemetry_event, event_name, nil})
+      end,
+      nil
+    )
+
+    puck_handler_id = "beamlens-dashboard-puck-#{inspect(pid)}"
+
+    puck_events = [
+      [:puck, :call, :exception],
+      [:puck, :stream, :exception]
+    ]
+
+    :telemetry.attach_many(
+      puck_handler_id,
+      puck_events,
+      fn event_name, _measurements, metadata, _config ->
+        send(pid, {:puck_error, event_name, metadata})
       end,
       nil
     )
@@ -1076,5 +1277,66 @@ defmodule BeamlensWeb.DashboardLive do
   defp format_timestamp_for_file do
     DateTime.utc_now()
     |> Calendar.strftime("%Y%m%d-%H%M%S")
+  end
+
+  defp generate_message_id do
+    "msg-" <> (:crypto.strong_rand_bytes(8) |> Base.encode16(case: :lower))
+  end
+
+  defp build_coordinator_messages(result) do
+    timestamp = DateTime.utc_now()
+    messages = []
+
+    insights = Map.get(result, :insights, [])
+    operator_results = Map.get(result, :operator_results, [])
+
+    messages =
+      if length(insights) > 0 do
+        messages ++
+          [
+            %{
+              id: generate_message_id(),
+              role: :coordinator,
+              content: "Found #{length(insights)} insight(s)",
+              timestamp: timestamp,
+              message_type: :insights,
+              insights: insights
+            }
+          ]
+      else
+        messages
+      end
+
+    messages =
+      if length(operator_results) > 0 do
+        messages ++
+          [
+            %{
+              id: generate_message_id(),
+              role: :coordinator,
+              content: "Received results from #{length(operator_results)} operator(s)",
+              timestamp: DateTime.add(timestamp, 1, :second),
+              message_type: :operator_results,
+              operator_results: operator_results
+            }
+          ]
+      else
+        messages
+      end
+
+    if Enum.empty?(messages) do
+      [
+        %{
+          id: generate_message_id(),
+          role: :coordinator,
+          content: "Analysis complete. No significant findings to report.",
+          timestamp: timestamp,
+          message_type: :text,
+          rendered_html: "<p>Analysis complete. No significant findings to report.</p>"
+        }
+      ]
+    else
+      messages
+    end
   end
 end
