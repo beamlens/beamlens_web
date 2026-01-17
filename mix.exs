@@ -50,7 +50,8 @@ defmodule BeamlensWeb.MixProject do
       {:bandit, "~> 1.0", only: :test},
       {:jason, "~> 1.4"},
       {:req, "~> 0.5"},
-      {:beamlens, "~> 0.2"}
+      {:beamlens, "~> 0.2"},
+      {:mdex, "~> 0.11"}
     ]
   end
 end
