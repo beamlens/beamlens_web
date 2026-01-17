@@ -77,7 +77,7 @@ defmodule BeamlensWeb.SidebarComponents do
                 <.icon name="hero-bolt" class="w-4 h-4 text-primary" />
               <% end %>
             </span>
-            <span class="flex-1 text-left">Trigger Analysis</span>
+            <span class="flex-1 text-left">Trigger</span>
             <%= if @analysis_running do %>
               <span class="loading loading-spinner loading-xs"></span>
             <% end %>
