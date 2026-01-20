@@ -12,13 +12,17 @@ defmodule BeamlensWeb.ChatComponents do
   @doc """
   Main chat container with messages area and input.
   """
-  attr :messages, :list, required: true
-  attr :input_text, :string, required: true
-  attr :analysis_running, :boolean, default: false
+  attr(:messages, :list, required: true, doc: "List of BeamlensWeb.ChatMessage structs")
+  attr(:input_text, :string, required: true)
+  attr(:analysis_running, :boolean, default: false)
 
   def chat_container(assigns) do
     ~H"""
     <div class="flex flex-col h-full min-h-0">
+      <%= if not Enum.empty?(@messages) do %>
+        <.chat_header analysis_running={@analysis_running} />
+      <% end %>
+
       <div
         id="chat-messages"
         phx-hook=".ChatScroll"
@@ -56,24 +60,56 @@ defmodule BeamlensWeb.ChatComponents do
   end
 
   @doc """
+  Renders the chat header with conversation controls.
+  """
+  attr(:analysis_running, :boolean, default: false)
+
+  def chat_header(assigns) do
+    ~H"""
+    <div class="shrink-0 flex items-center justify-between px-4 py-2 border-b border-base-300 bg-base-100/80 backdrop-blur-sm">
+      <div class="flex items-center gap-2 text-sm text-base-content/70">
+        <.icon name="hero-chat-bubble-left-right" class="w-4 h-4" />
+        <span>Conversation</span>
+      </div>
+      <button
+        type="button"
+        phx-click="new_conversation"
+        disabled={@analysis_running}
+        class={[
+          "btn btn-ghost btn-xs gap-1.5 text-base-content/60 hover:text-base-content",
+          @analysis_running && "btn-disabled"
+        ]}
+      >
+        <.icon name="hero-arrow-path" class="w-3.5 h-3.5" />
+        <span>New chat</span>
+      </button>
+    </div>
+    """
+  end
+
+  @doc """
   Renders the scrollable messages area.
   """
-  attr :messages, :list, required: true
-  attr :analysis_running, :boolean, default: false
+  attr(:messages, :list, required: true, doc: "List of BeamlensWeb.ChatMessage structs")
+  attr(:analysis_running, :boolean, default: false)
 
   def messages_area(assigns) do
     ~H"""
     <%= if Enum.empty?(@messages) do %>
       <.empty_chat_state />
     <% else %>
-      <%= for message <- @messages do %>
-        <%= case message.role do %>
-          <% :user -> %>
-            <.user_message message={message} />
-          <% :coordinator -> %>
-            <.coordinator_message message={message} />
+      <div id="messages-list">
+        <%= for message <- @messages do %>
+          <div id={"message-#{message.id}"} class="mb-4">
+            <%= case message.role do %>
+              <% :user -> %>
+                <.user_message message={message} />
+              <% :coordinator -> %>
+                <.coordinator_message message={message} />
+            <% end %>
+          </div>
         <% end %>
-      <% end %>
+      </div>
     <% end %>
 
     <%= if @analysis_running do %>
@@ -100,14 +136,14 @@ defmodule BeamlensWeb.ChatComponents do
   end
 
   @doc """
-  Renders a user message as inline text (right-aligned, no bubble).
+  Renders a user message as inline text (left-aligned, no bubble).
   """
-  attr :message, :map, required: true
+  attr(:message, :map, required: true, doc: "A BeamlensWeb.ChatMessage struct with role: :user")
 
   def user_message(assigns) do
     ~H"""
-    <div class="flex justify-end">
-      <div class="text-right max-w-[85%]">
+    <div class="flex justify-start">
+      <div class="text-left max-w-[85%]">
         <p class="text-base-content"><%= @message.content %></p>
         <time class="text-xs text-base-content/40">
           <.timestamp value={@message.timestamp} />
@@ -120,7 +156,10 @@ defmodule BeamlensWeb.ChatComponents do
   @doc """
   Renders a coordinator message in a simple bubble (left-aligned, no avatar/header).
   """
-  attr :message, :map, required: true
+  attr(:message, :map,
+    required: true,
+    doc: "A BeamlensWeb.ChatMessage struct with role: :coordinator"
+  )
 
   def coordinator_message(assigns) do
     ~H"""
@@ -132,8 +171,6 @@ defmodule BeamlensWeb.ChatComponents do
         <%= case @message[:message_type] do %>
           <% :insights -> %>
             <.insights_bubble insights={@message.insights} />
-          <% :operator_results -> %>
-            <.operator_results_bubble results={@message.operator_results} />
           <% :error -> %>
             <.error_content message={@message.content} />
           <% _ -> %>
@@ -155,13 +192,12 @@ defmodule BeamlensWeb.ChatComponents do
 
   defp message_bubble_class(:error), do: "bg-error/10 text-error"
   defp message_bubble_class(:insights), do: "bg-base-200"
-  defp message_bubble_class(:operator_results), do: "bg-base-200"
   defp message_bubble_class(_), do: "bg-base-200"
 
   @doc """
   Renders insights within a chat bubble.
   """
-  attr :insights, :list, required: true
+  attr(:insights, :list, required: true)
 
   def insights_bubble(assigns) do
     ~H"""
@@ -178,28 +214,9 @@ defmodule BeamlensWeb.ChatComponents do
   end
 
   @doc """
-  Renders operator results within a chat bubble.
-  """
-  attr :results, :list, required: true
-
-  def operator_results_bubble(assigns) do
-    ~H"""
-    <div class="space-y-3">
-      <div class="flex items-center gap-2 text-sm font-medium text-base-content/80">
-        <.icon name="hero-cpu-chip" class="w-4 h-4 text-primary" />
-        Results from <%= length(@results) %> operator(s)
-      </div>
-      <%= for result <- @results do %>
-        <.chat_operator_result result={result} />
-      <% end %>
-    </div>
-    """
-  end
-
-  @doc """
   Renders an insight card within a chat message.
   """
-  attr :insight, :map, required: true
+  attr(:insight, :map, required: true)
 
   def chat_insight_card(assigns) do
     ~H"""
@@ -211,79 +228,66 @@ defmodule BeamlensWeb.ChatComponents do
       <p class="text-sm text-base-content leading-relaxed">
         <%= @insight.summary %>
       </p>
-      <%= if @insight[:root_cause_hypothesis] do %>
+      <%= if Map.get(@insight, :root_cause_hypothesis) do %>
         <div class="mt-2 p-2 bg-base-200 rounded text-xs text-base-content/70">
           <span class="font-medium">Hypothesis:</span> <%= @insight.root_cause_hypothesis %>
         </div>
       <% end %>
       <div class="mt-2 text-xs text-base-content/50">
-        <%= length(@insight[:notification_ids] || []) %> notification(s) correlated
+        <%= length(Map.get(@insight, :notification_ids, [])) %> notification(s) correlated
       </div>
     </div>
     """
   end
 
   @doc """
-  Renders an operator result within a chat message.
+  Renders an error message within a chat bubble.
+  Shows a friendly summary with expandable details for long errors.
   """
-  attr :result, :map, required: true
+  attr(:message, :string, required: true)
 
-  def chat_operator_result(assigns) do
-    notification_count = length(Map.get(assigns.result, :notifications, []))
-    assigns = assign(assigns, :notification_count, notification_count)
+  def error_content(assigns) do
+    {summary, details} = extract_error_summary(assigns.message)
+    has_details = details != nil and String.length(details) > 0
+
+    assigns =
+      assigns
+      |> assign(:summary, summary)
+      |> assign(:details, details)
+      |> assign(:has_details, has_details)
 
     ~H"""
-    <div class="bg-base-100 rounded-lg p-3 border border-base-300 shadow-sm">
-      <div class="flex items-center justify-between mb-2">
-        <span class="font-medium text-sm text-base-content">
-          <%= format_skill_name(@result.skill) %>
-        </span>
-        <span class="badge badge-primary badge-outline badge-sm">
-          <%= @notification_count %> notification(s)
-        </span>
+    <div class="space-y-2">
+      <div class="flex items-start gap-2">
+        <.icon name="hero-exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5" />
+        <span><%= @summary %></span>
       </div>
-      <%= if @notification_count > 0 do %>
-        <div class="space-y-2">
-          <%= for notification <- Enum.take(@result.notifications, 3) do %>
-            <div class="flex items-start gap-2 text-xs p-2 bg-base-200 rounded">
-              <.badge variant={notification.severity} class="shrink-0">
-                <%= notification.severity %>
-              </.badge>
-              <span class="text-base-content/80 line-clamp-2"><%= notification.summary %></span>
-            </div>
-          <% end %>
-          <%= if @notification_count > 3 do %>
-            <div class="text-xs text-base-content/50 text-center">
-              + <%= @notification_count - 3 %> more
-            </div>
-          <% end %>
-        </div>
+      <%= if @has_details do %>
+        <details class="group">
+          <summary class="text-xs text-base-content/50 cursor-pointer hover:text-base-content/70 flex items-center gap-1">
+            <.icon name="hero-chevron-right" class="w-3 h-3 transition-transform group-open:rotate-90" />
+            Show error details
+          </summary>
+          <div class="mt-2 p-2 bg-base-300/50 rounded text-xs font-mono overflow-x-auto max-h-32 overflow-y-auto">
+            <pre class="whitespace-pre-wrap break-all"><%= @details %></pre>
+          </div>
+        </details>
       <% end %>
     </div>
     """
   end
 
-  defp format_skill_name(skill) when is_atom(skill) do
-    skill
-    |> Module.split()
-    |> List.last()
+  @error_truncate_length 100
+
+  defp extract_error_summary(message) when is_binary(message) do
+    if String.length(message) > @error_truncate_length do
+      {String.slice(message, 0, @error_truncate_length) <> "...", message}
+    else
+      {message, nil}
+    end
   end
 
-  defp format_skill_name(skill), do: to_string(skill)
-
-  @doc """
-  Renders an error message within a chat bubble.
-  """
-  attr :message, :string, required: true
-
-  def error_content(assigns) do
-    ~H"""
-    <div class="flex items-start gap-2">
-      <.icon name="hero-exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5" />
-      <span><%= @message %></span>
-    </div>
-    """
-  end
+  defp extract_error_summary(message), do: {inspect(message), nil}
 
   @doc """
   Renders a thinking/loading indicator in the chat.
@@ -304,8 +308,8 @@ defmodule BeamlensWeb.ChatComponents do
   @doc """
   Renders the chat input area.
   """
-  attr :input_text, :string, required: true
-  attr :analysis_running, :boolean, default: false
+  attr(:input_text, :string, required: true)
+  attr(:analysis_running, :boolean, default: false)
 
   def chat_input(assigns) do
     can_send = String.trim(assigns.input_text) != "" and not assigns.analysis_running
@@ -376,5 +380,4 @@ defmodule BeamlensWeb.ChatComponents do
     </script>
     """
   end
-
 end
