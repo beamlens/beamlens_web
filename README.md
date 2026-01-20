@@ -1,20 +1,14 @@
 # BeamlensWeb
 
-A Phoenix LiveView dashboard for monitoring BeamLens operators and coordinator activity. Provides real-time visibility into system health, notifications, and insights.
+A real-time dashboard for Beamlens.
 
 ## Features
 
-- Chat-based interface for triggering analysis with conversational UI
-- Real-time event stream with filtering and search
-- Operator status monitoring with state badges
-- Coordinator status and iteration tracking
-- Notification and insight quick filters
-- Multi-node cluster support
-- Markdown rendering for chat responses
-- Ability to stop running analysis from the chat interface
-- Inline error display with expandable technical details
+- Chat interface to manage Beamlens
+- Real-time event tracing
+- Coordinator and operator health monitoring
+- Cluster support
 - JSON export for analysis
-- Light/dark/system theme support
 
 ## Installation
 
