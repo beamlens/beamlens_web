@@ -1,5 +1,9 @@
 # BeamlensWeb
 
+> ⚠️ **Beta Software**: This package is in private beta. APIs may change.
+
+![BeamlensWeb Demo](docs/demo.gif)
+
 A real-time dashboard for Beamlens.
 
 ## Features
@@ -10,17 +14,19 @@ A real-time dashboard for Beamlens.
 - Cluster support
 - JSON export for analysis
 
-## Installation
+## Installation (Beta)
 
-Add `beamlens_web` to your list of dependencies in `mix.exs`:
+During the beta period, add `beamlens_web` as a git dependency:
 
 ```elixir
 def deps do
   [
-    {:beamlens_web, "~> 0.1.0"}
+    {:beamlens_web, github: "beamlens/beamlens_web", tag: "v0.1.0-beta.1"}
   ]
 end
 ```
+
+> **Note:** You'll need GitHub access to the repository for beta access.
 
 ### Configure your router
 
