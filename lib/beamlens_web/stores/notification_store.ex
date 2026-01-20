@@ -11,8 +11,6 @@ defmodule BeamlensWeb.NotificationStore do
   @table_name :beamlens_web_notifications
   @telemetry_handler_id "beamlens-web-notification-store"
 
-
-
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
@@ -71,8 +69,6 @@ defmodule BeamlensWeb.NotificationStore do
   def notification_counts_callback do
     counts()
   end
-
-
 
   @impl true
   def init(_opts) do

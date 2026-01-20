@@ -41,8 +41,6 @@ defmodule BeamlensWeb.EventStore do
     [:beamlens, :coordinator, :llm_error]
   ]
 
-
-
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
@@ -76,13 +74,10 @@ defmodule BeamlensWeb.EventStore do
     list_events(source)
   end
 
-
-
   @impl true
   def init(_opts) do
     table = :ets.new(@table_name, [:named_table, :set, :public, read_concurrency: true])
 
-    # Subscribe to all tracked events
     all_events = @operator_events ++ @coordinator_events
 
     :telemetry.attach_many(
@@ -135,7 +130,6 @@ defmodule BeamlensWeb.EventStore do
   defp extract_source([:beamlens, :coordinator, _], _metadata), do: :coordinator
   defp extract_source(_, _), do: :unknown
 
-  # Extract only the relevant metadata for display
   defp sanitize_metadata([:beamlens, :operator, :iteration_start], meta) do
     %{iteration: meta[:iteration], operator_state: meta[:operator_state]}
   end
@@ -245,13 +239,11 @@ defmodule BeamlensWeb.EventStore do
     size = :ets.info(@table_name, :size)
 
     if size > @max_events do
-      # Get all events, sort by timestamp, delete oldest
       events =
         :ets.tab2list(@table_name)
         |> Enum.map(fn {id, event} -> {id, event.timestamp} end)
         |> Enum.sort_by(fn {_id, ts} -> ts end, {:asc, DateTime})
 
-      # Delete oldest events to get back to max
       events_to_delete = Enum.take(events, size - @max_events)
 
       Enum.each(events_to_delete, fn {id, _ts} ->

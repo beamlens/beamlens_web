@@ -11,8 +11,6 @@ defmodule BeamlensWeb.InsightStore do
   @table_name :beamlens_web_insights
   @telemetry_handler_id "beamlens-web-insight-store"
 
-
-
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
@@ -48,8 +46,6 @@ defmodule BeamlensWeb.InsightStore do
   def insights_callback do
     list_insights()
   end
-
-
 
   @impl true
   def init(_opts) do
