@@ -12,9 +12,13 @@ defmodule TestAppWeb.Endpoint do
     websocket: [connect_info: [session: @session_options]],
     longpoll: [connect_info: [session: @session_options]]
 
+  socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
+
   if Code.ensure_loaded?(Tidewave) do
     plug(Tidewave)
   end
+
+  plug(Phoenix.LiveReloader)
 
   plug(Plug.Static,
     at: "/",

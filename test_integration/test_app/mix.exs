@@ -14,7 +14,7 @@ defmodule TestApp.MixProject do
 
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger, :os_mon],
       mod: {TestApp.Application, []}
     ]
   end
@@ -24,6 +24,7 @@ defmodule TestApp.MixProject do
       {:phoenix, "~> 1.7"},
       {:phoenix_live_view, "~> 1.0"},
       {:phoenix_html, "~> 4.0"},
+      {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:bandit, "~> 1.0"},
       {:jason, "~> 1.4"},
       {:beamlens, "~> 0.2"},
