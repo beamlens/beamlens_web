@@ -51,7 +51,8 @@ defmodule BeamlensWeb.MixProject do
       {:jason, "~> 1.4"},
       {:req, "~> 0.5"},
       {:beamlens, "~> 0.2"},
-      {:mdex, "~> 0.11"}
+      {:mdex, "~> 0.11"},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end
 end
