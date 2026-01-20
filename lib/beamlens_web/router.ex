@@ -8,7 +8,7 @@ defmodule BeamlensWeb.Router do
 
       scope "/" do
         pipe_through :browser
-        beamlens_web "/dashboard"
+        beamlens_web "/beamlens"
       end
   """
 
@@ -22,7 +22,7 @@ defmodule BeamlensWeb.Router do
 
   ## Examples
 
-      beamlens_web "/dashboard"
+      beamlens_web "/beamlens"
 
       beamlens_web "/admin/beamlens",
         on_mount: [{MyApp.Auth, :ensure_admin}]

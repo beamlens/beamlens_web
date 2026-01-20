@@ -61,12 +61,14 @@ defmodule BeamlensWeb.DashboardLive do
   end
 
   @impl true
-  def handle_params(params, _uri, socket) do
+  def handle_params(params, uri, socket) do
     source = parse_source_param(params["source"], socket.assigns.operators)
     type_filter = parse_type_param(params["type"])
+    base_path = URI.parse(uri).path
 
     {:noreply,
      socket
+     |> assign(:base_path, base_path)
      |> assign(:selected_source, source)
      |> assign(:event_type_filter, type_filter)
      |> apply_filters()}
@@ -79,7 +81,9 @@ defmodule BeamlensWeb.DashboardLive do
     {:noreply,
      socket
      |> assign(:sidebar_open, false)
-     |> push_patch(to: build_url(source_atom, socket.assigns.event_type_filter))}
+     |> push_patch(
+       to: build_url(socket.assigns.base_path, source_atom, socket.assigns.event_type_filter)
+     )}
   end
 
   def handle_event("filter_events", params, socket) do
@@ -91,13 +95,15 @@ defmodule BeamlensWeb.DashboardLive do
 
     {:noreply,
      socket
-     |> push_patch(to: build_url(socket.assigns.selected_source, type_filter))}
+     |> push_patch(
+       to: build_url(socket.assigns.base_path, socket.assigns.selected_source, type_filter)
+     )}
   end
 
   def handle_event("clear_event_filters", _params, socket) do
     {:noreply,
      socket
-     |> push_patch(to: build_url(socket.assigns.selected_source, nil))}
+     |> push_patch(to: build_url(socket.assigns.base_path, socket.assigns.selected_source, nil))}
   end
 
   def handle_event("select_node", %{"node" => node_str}, socket) do
@@ -776,7 +782,7 @@ defmodule BeamlensWeb.DashboardLive do
             >
               <.icon name="hero-bars-3" class="w-5 h-5" />
             </button>
-            <a href="/dashboard" class="flex items-center gap-2.5 group">
+            <a href={@base_path} class="flex items-center gap-2.5 group">
               <img src="/images/logo/icon-blue.png" alt="beamlens" width="32" height="32" class="w-8 h-8 shrink-0 object-contain transition-transform group-hover:scale-105" />
               <h1 class="text-lg md:text-xl font-bold text-base-content">beamlens</h1>
             </a>
@@ -1114,15 +1120,15 @@ defmodule BeamlensWeb.DashboardLive do
     end
   end
 
-  defp build_url(source, type_filter) do
+  defp build_url(base_path, source, type_filter) do
     params =
       []
       |> add_param_if_value("source", source_to_string(source))
       |> add_param_if_value("type", type_to_string(type_filter))
 
     case params do
-      [] -> "/dashboard"
-      _ -> "/dashboard?" <> URI.encode_query(params)
+      [] -> base_path
+      _ -> base_path <> "?" <> URI.encode_query(params)
     end
   end
 

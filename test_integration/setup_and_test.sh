@@ -101,7 +101,7 @@ defmodule TestAppWeb.Router do
 
   scope "/" do
     pipe_through :browser
-    beamlens_web "/dashboard"
+    beamlens_web "/beamlens"
   end
 end
 EOF
@@ -225,7 +225,7 @@ echo ""
 echo "To manually test the dashboard:"
 echo "  cd test_integration/test_app"
 echo "  mix phx.server"
-echo "  Then visit http://localhost:4000/dashboard"
+echo "  Then visit http://localhost:4000/beamlens"
 echo ""
 echo "To cleanup:"
 echo "  rm -rf test_integration/test_app"

@@ -36,7 +36,7 @@ cd test_app
 mix phx.server
 ```
 
-Visit http://localhost:4000/dashboard
+Visit http://localhost:4000/beamlens
 
 ## Cleanup
 

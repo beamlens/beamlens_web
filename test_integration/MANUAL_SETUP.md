@@ -72,7 +72,7 @@ defmodule TestAppWeb.Router do
 
   scope "/" do
     pipe_through :browser
-    beamlens_web "/dashboard"
+    beamlens_web "/beamlens"
   end
 end
 ```
@@ -196,7 +196,7 @@ mix deps.get
 mix phx.server
 ```
 
-Visit: http://localhost:4000/dashboard
+Visit: http://localhost:4000/beamlens
 
 ## Expected Results
 

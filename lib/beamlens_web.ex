@@ -26,10 +26,10 @@ defmodule BeamlensWeb do
 
       scope "/" do
         pipe_through :browser
-        beamlens_web "/dashboard"
+        beamlens_web "/beamlens"
       end
 
-  Navigate to `/dashboard` to view the BeamLens monitoring dashboard.
+  Navigate to `/beamlens` to view the BeamLens monitoring dashboard.
   """
 
   @doc """

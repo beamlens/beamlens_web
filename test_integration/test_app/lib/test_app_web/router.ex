@@ -10,6 +10,6 @@ defmodule TestAppWeb.Router do
 
   scope "/" do
     pipe_through(:browser)
-    beamlens_web("/dashboard")
+    beamlens_web("/beamlens")
   end
 end
