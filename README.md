@@ -59,19 +59,6 @@ children = [
 
 The `client_registry` option enables the chat interface to generate AI-powered summaries of analysis results. If not provided, the chat will display raw analysis data.
 
-### Serve static assets
-
-The library includes pre-built CSS. Configure your endpoint to serve static files from the library:
-
-```elixir
-# In your endpoint.ex
-plug Plug.Static,
-  at: "/",
-  from: :beamlens_web,
-  gzip: false,
-  only: ~w(assets)
-```
-
 ## Development
 
 ### Prerequisites
