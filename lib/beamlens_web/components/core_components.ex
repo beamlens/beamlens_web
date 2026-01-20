@@ -29,7 +29,6 @@ defmodule BeamlensWeb.CoreComponents do
     """
   end
 
-
   defp variant_class(:healthy), do: "badge-success"
   defp variant_class(:observing), do: "badge-info"
   defp variant_class(:warning), do: "badge-warning"

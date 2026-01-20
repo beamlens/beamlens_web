@@ -252,29 +252,6 @@ defmodule BeamlensWeb.TriggerComponents do
             <% end %>
           </div>
 
-          <div>
-            <div class="flex items-center justify-between mb-4 pb-3 border-b border-base-300/50">
-              <h3 class="text-sm font-semibold text-base-content flex items-center gap-2">
-                <.icon name="hero-cpu-chip" class="w-4 h-4 text-primary" />
-                Operator Results
-              </h3>
-              <span class="badge badge-primary badge-outline badge-sm font-medium"><%= length(@result.operator_results) %></span>
-            </div>
-            <%= if Enum.empty?(@result.operator_results) do %>
-              <div class="text-center py-10 text-base-content/50">
-                <div class="w-14 h-14 mx-auto mb-3 rounded-xl bg-base-200 flex items-center justify-center">
-                  <.icon name="hero-cpu-chip" class="w-7 h-7 opacity-40" />
-                </div>
-                <p class="text-sm font-medium">No operator results</p>
-              </div>
-            <% else %>
-              <div class="space-y-4">
-                <%= for op_result <- @result.operator_results do %>
-                  <.operator_result_card result={op_result} />
-                <% end %>
-              </div>
-            <% end %>
-          </div>
         </div>
       </div>
     <% end %>
@@ -326,68 +303,6 @@ defmodule BeamlensWeb.TriggerComponents do
     </div>
     """
   end
-
-  @doc """
-  Renders an operator result card.
-  """
-  attr(:result, :map, required: true)
-
-  def operator_result_card(assigns) do
-    notification_count = length(Map.get(assigns.result, :notifications, []))
-    assigns = assign(assigns, :notification_count, notification_count)
-
-    ~H"""
-    <div class="group relative rounded-xl bg-base-100 border border-base-300 shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-300 overflow-hidden">
-      <%!-- Accent bar --%>
-      <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary to-primary/50"></div>
-
-      <div class="px-5 py-4 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <span class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shrink-0 ring-1 ring-primary/20">
-            <.icon name="hero-cpu-chip" class="w-5 h-5 text-primary" />
-          </span>
-          <span class="font-semibold text-base-content">
-            <%= format_skill_name(@result.skill) %>
-          </span>
-        </div>
-        <div class="flex items-center gap-3 text-sm">
-          <span class="badge badge-primary badge-outline badge-sm font-medium"><%= @notification_count %> notification(s)</span>
-          <span class="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <.copy_all_button data={maybe_struct_to_map(@result)} />
-          </span>
-        </div>
-      </div>
-      <%= if @notification_count > 0 do %>
-        <div class="border-t border-base-300/50 px-5 py-4">
-          <div class="space-y-3">
-            <%= for notification <- @result.notifications do %>
-              <div class="flex items-start gap-3 p-4 bg-gradient-to-br from-base-200/60 to-base-200/30 rounded-lg text-sm border border-base-300/50 transition-all duration-200 hover:border-base-content/20 hover:shadow-sm">
-                <.badge variant={notification.severity} class="shrink-0 mt-0.5">
-                  <%= notification.severity %>
-                </.badge>
-                <div class="flex-1 min-w-0">
-                  <div class="text-base-content leading-relaxed"><%= notification.summary %></div>
-                  <div class="text-xs text-base-content/50 mt-2 flex items-center gap-1.5 px-2 py-1 rounded-md bg-base-100/50 w-fit">
-                    <.icon name="hero-tag" class="w-3.5 h-3.5 text-primary/50" />
-                    <%= notification.anomaly_type %>
-                  </div>
-                </div>
-              </div>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
-    </div>
-    """
-  end
-
-  defp format_skill_name(skill) when is_atom(skill) do
-    skill
-    |> Module.split()
-    |> List.last()
-  end
-
-  defp format_skill_name(skill), do: to_string(skill)
 
   defp maybe_struct_to_map(%{__struct__: _} = struct), do: Map.from_struct(struct)
   defp maybe_struct_to_map(map) when is_map(map), do: map

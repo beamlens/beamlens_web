@@ -140,24 +140,6 @@ defmodule BeamlensWeb.SidebarComponents do
           </div>
         </div>
 
-        <%!-- Summary Section --%>
-        <%= if @notification_count > 0 or @insight_count > 0 do %>
-          <div>
-            <h2 class="text-[10px] font-bold text-base-content/40 uppercase tracking-[0.15em] px-2 mb-3">
-              Summary
-            </h2>
-            <div class="px-3 py-3 rounded-xl bg-base-200/30 space-y-2">
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-base-content/60">Notifications</span>
-                <span class="font-semibold text-base-content tabular-nums"><%= @notification_count %></span>
-              </div>
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-base-content/60">Insights</span>
-                <span class="font-semibold text-base-content tabular-nums"><%= @insight_count %></span>
-              </div>
-            </div>
-          </div>
-        <% end %>
       </div>
     </aside>
     """

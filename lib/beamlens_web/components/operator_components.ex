@@ -42,7 +42,6 @@ defmodule BeamlensWeb.OperatorComponents do
   end
 
   defp format_operator_name(name) when is_atom(name) do
-
     name
     |> Module.split()
     |> List.last()
