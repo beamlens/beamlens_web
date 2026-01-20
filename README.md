@@ -1,6 +1,6 @@
 # BeamlensWeb
 
-> ⚠️ **Beta Software**: This package is in private beta. APIs may change.
+> ⚠️ **Beta Software**: This package is in beta. APIs may change.
 
 ![BeamlensWeb Demo](docs/demo.gif)
 
@@ -25,8 +25,6 @@ def deps do
   ]
 end
 ```
-
-> **Note:** You'll need GitHub access to the repository for beta access.
 
 ### Configure your router
 
