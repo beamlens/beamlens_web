@@ -16,12 +16,12 @@ A real-time dashboard for Beamlens.
 
 ## Installation (Beta)
 
-During the beta period, add `beamlens_web` as a git dependency:
+Add `beamlens_web` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:beamlens_web, github: "beamlens/beamlens_web", tag: "v0.1.0-beta.1"}
+    {:beamlens_web, "~> 0.1.0-beta.1"}
   ]
 end
 ```
