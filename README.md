@@ -45,13 +45,13 @@ children = [
   {BeamlensWeb, client_registry: %{
     primary: "anthropic",
     clients: [
-      %{name: "anthropic", provider: :anthropic, options: [model: "claude-sonnet-4-20250514"]}
+      %{name: "anthropic", provider: :anthropic, options: [model: "claude-haiku-4-5"]}
     ]
   }}
 ]
 ```
 
-The `client_registry` option enables the chat interface to generate AI-powered summaries of analysis results. If not provided, the chat will display raw analysis data.
+The `client_registry` option enables the chat interface to generate AI-powered summaries of analysis results. If not provided, the chat will display raw analysis data. See the [Beamlens provider docs](https://hexdocs.pm/beamlens/providers.html) for more configuration examples.
 
 ## Telemetry Events
 
