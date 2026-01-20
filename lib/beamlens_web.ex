@@ -9,6 +9,17 @@ defmodule BeamlensWeb do
 
       {:beamlens_web, "~> 0.1"}
 
+  Add BeamlensWeb to your supervision tree with configuration:
+
+      children = [
+        {BeamlensWeb, client_registry: %{
+          primary: "MyClient",
+          clients: [
+            %{name: "MyClient", provider: "openai-generic", options: %{...}}
+          ]
+        }}
+      ]
+
   Then mount the dashboard in your router:
 
       import BeamlensWeb.Router
@@ -20,6 +31,19 @@ defmodule BeamlensWeb do
 
   Navigate to `/dashboard` to view the BeamLens monitoring dashboard.
   """
+
+  @doc """
+  Returns a child specification for starting BeamlensWeb in a supervision tree.
+
+  ## Options
+
+    * `:client_registry` - A map containing LLM client configuration
+
+  ## Example
+
+      {BeamlensWeb, client_registry: %{primary: "ZAI", clients: [...]}}
+  """
+  defdelegate child_spec(opts), to: BeamlensWeb.Application
 
   @doc """
   Returns the static path for BeamlensWeb assets.

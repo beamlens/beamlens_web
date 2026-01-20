@@ -31,14 +31,14 @@ defmodule BeamlensWeb.MixProject do
       links: %{
         "GitHub" => "https://github.com/beamlens/beamlens_web"
       },
-      files: ~w(lib priv/static .formatter.exs mix.exs README.md LICENSE)
+      files:
+        ~w(lib priv/static priv/baml_src .formatter.exs mix.exs README.md CHANGELOG.md LICENSE)
     ]
   end
 
   def application do
     [
-      extra_applications: [:logger],
-      mod: {BeamlensWeb.Application, []}
+      extra_applications: [:logger]
     ]
   end
 
