@@ -9,15 +9,10 @@ defmodule BeamlensWeb do
 
       {:beamlens_web, "~> 0.1"}
 
-  Add BeamlensWeb to your supervision tree with configuration:
+  Add BeamlensWeb to your supervision tree:
 
       children = [
-        {BeamlensWeb, client_registry: %{
-          primary: "MyClient",
-          clients: [
-            %{name: "MyClient", provider: "openai-generic", options: %{...}}
-          ]
-        }}
+        BeamlensWeb
       ]
 
   Then mount the dashboard in your router:
@@ -30,6 +25,21 @@ defmodule BeamlensWeb do
       end
 
   Navigate to `/beamlens` to view the BeamLens monitoring dashboard.
+
+  ## Optional: AI-powered summaries
+
+  To enable AI-powered summaries, configure a `client_registry`:
+
+      children = [
+        {BeamlensWeb, client_registry: %{
+          primary: "MyClient",
+          clients: [
+            %{name: "MyClient", provider: "openai-generic", options: %{...}}
+          ]
+        }}
+      ]
+
+  When not configured, the chat interface displays raw analysis data.
   """
 
   @doc """

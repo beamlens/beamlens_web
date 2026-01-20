@@ -37,7 +37,18 @@ end
 
 ### Add to supervision tree
 
-Add BeamlensWeb to your application's supervision tree with optional LLM client configuration:
+Add BeamlensWeb to your application's supervision tree:
+
+```elixir
+children = [
+  # ... your other children ...
+  BeamlensWeb
+]
+```
+
+#### Optional: AI-powered summaries
+
+To enable AI-powered summaries of analysis results, configure a `client_registry`:
 
 ```elixir
 children = [
@@ -51,7 +62,7 @@ children = [
 ]
 ```
 
-The `client_registry` option enables the chat interface to generate AI-powered summaries of analysis results. If not provided, the chat will display raw analysis data. See the [Beamlens provider docs](https://hexdocs.pm/beamlens/providers.html) for more configuration examples.
+When `client_registry` is not configured, the chat interface displays raw analysis data instead of AI summaries. See the [Beamlens provider docs](https://hexdocs.pm/beamlens/providers.html) for more configuration examples.
 
 ## Telemetry Events
 
@@ -62,9 +73,6 @@ BeamlensWeb emits telemetry events for observability:
 - `[:beamlens_web, :dashboard, :chat_analysis, :start]` - Chat analysis started
 - `[:beamlens_web, :dashboard, :chat_analysis, :complete]` - Chat analysis completed
 - `[:beamlens_web, :dashboard, :chat_analysis, :error]` - Chat analysis failed
-- `[:beamlens_web, :dashboard, :trigger_analysis, :start]` - Trigger analysis started
-- `[:beamlens_web, :dashboard, :trigger_analysis, :complete]` - Trigger analysis completed
-- `[:beamlens_web, :dashboard, :trigger_analysis, :error]` - Trigger analysis failed
 - `[:beamlens_web, :dashboard, :summarization, :start]` - Summarization started
 - `[:beamlens_web, :dashboard, :summarization, :complete]` - Summarization completed
 - `[:beamlens_web, :dashboard, :summarization, :error]` - Summarization failed

@@ -166,16 +166,16 @@ defmodule BeamlensWeb.ChatComponents do
     <div class="flex justify-start">
       <div class={[
         "rounded-2xl px-4 py-3 max-w-[85%]",
-        message_bubble_class(@message[:message_type])
+        message_bubble_class(@message.message_type)
       ]}>
-        <%= case @message[:message_type] do %>
+        <%= case @message.message_type do %>
           <% :insights -> %>
             <.insights_bubble insights={@message.insights} />
           <% :error -> %>
             <.error_content message={@message.content} />
           <% _ -> %>
             <div class="prose prose-sm max-w-none">
-              <%= if @message[:rendered_html] do %>
+              <%= if @message.rendered_html do %>
                 <%= Phoenix.HTML.raw(@message.rendered_html) %>
               <% else %>
                 <%= @message.content %>

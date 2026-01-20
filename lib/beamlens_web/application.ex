@@ -8,7 +8,15 @@ defmodule BeamlensWeb.Application do
 
   ## Example
 
-  In your application's children list:
+  Basic usage (no AI summaries):
+
+  ```elixir
+  children = [
+    BeamlensWeb
+  ]
+  ```
+
+  With AI-powered summaries (optional):
 
   ```elixir
   children = [
@@ -18,9 +26,12 @@ defmodule BeamlensWeb.Application do
 
   ## Options
 
-    * `:client_registry` - A map containing LLM client configuration with keys:
+    * `:client_registry` - (optional) A map containing LLM client configuration with keys:
       * `:primary` - The name of the primary client to use
       * `:clients` - A list of client configurations with `:name`, `:provider`, and `:options`
+
+  When `client_registry` is not provided, the chat interface displays raw analysis
+  data instead of AI-generated summaries.
   """
 
   use Application
@@ -46,6 +57,14 @@ defmodule BeamlensWeb.Application do
   application's supervision tree with runtime configuration.
 
   ## Example
+
+  ```elixir
+  children = [
+    BeamlensWeb
+  ]
+  ```
+
+  Or with AI-powered summaries:
 
   ```elixir
   children = [

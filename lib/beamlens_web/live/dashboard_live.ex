@@ -36,10 +36,13 @@ defmodule BeamlensWeb.DashboardLive do
     node = Node.self()
     available_skills = load_available_skills(node)
     selected_skill_modules = Enum.map(available_skills, & &1.module)
+    chat_enabled = BeamlensWeb.Config.chat_enabled?()
+    default_source = if chat_enabled, do: :trigger, else: :all
 
     {:ok,
      socket
-     |> assign(:selected_source, :trigger)
+     |> assign(:chat_enabled, chat_enabled)
+     |> assign(:selected_source, default_source)
      |> assign(:event_type_filter, nil)
      |> assign(:selected_event_id, nil)
      |> assign(:events_paused, false)
@@ -62,7 +65,8 @@ defmodule BeamlensWeb.DashboardLive do
 
   @impl true
   def handle_params(params, uri, socket) do
-    source = parse_source_param(params["source"], socket.assigns.operators)
+    chat_enabled = socket.assigns.chat_enabled
+    source = parse_source_param(params["source"], socket.assigns.operators, chat_enabled)
     type_filter = parse_type_param(params["type"])
     base_path = URI.parse(uri).path
 
@@ -76,7 +80,8 @@ defmodule BeamlensWeb.DashboardLive do
 
   @impl true
   def handle_event("select_source", %{"source" => source}, socket) do
-    source_atom = parse_source_param(source, socket.assigns.operators)
+    source_atom =
+      parse_source_param(source, socket.assigns.operators, socket.assigns.chat_enabled)
 
     {:noreply,
      socket
@@ -431,7 +436,7 @@ defmodule BeamlensWeb.DashboardLive do
             try do
               client_registry = BeamlensWeb.Config.client_registry()
               opts = [skills: skills, max_iterations: 20, client_registry: client_registry]
-              res = :erpc.call(node, Beamlens.Coordinator, :run, [context, opts], 120_000)
+              {:ok, res} = :erpc.call(node, Beamlens.Coordinator, :run, [context, opts], 120_000)
 
               :telemetry.execute(
                 [:beamlens_web, :dashboard, :chat_analysis, :complete],
@@ -439,7 +444,7 @@ defmodule BeamlensWeb.DashboardLive do
                 %{node: node, insight_count: length(Map.get(res, :insights, []))}
               )
 
-              res
+              {:ok, res}
             catch
               kind, reason ->
                 :telemetry.execute(
@@ -493,59 +498,6 @@ defmodule BeamlensWeb.DashboardLive do
     {:noreply, socket}
   end
 
-  def handle_event("trigger_analysis", _params, socket) do
-    node = socket.assigns.selected_node
-    context = %{reason: socket.assigns.trigger_context}
-    skills = socket.assigns.selected_skills
-
-    socket =
-      socket
-      |> assign(:analysis_running, true)
-      |> assign(:analysis_result, nil)
-
-    liveview_pid = self()
-
-    Task.Supervisor.start_child(BeamlensWeb.TaskSupervisor, fn ->
-      :telemetry.execute(
-        [:beamlens_web, :dashboard, :trigger_analysis, :start],
-        %{system_time: System.system_time()},
-        %{node: node, skills: skills}
-      )
-
-      result =
-        try do
-          client_registry = BeamlensWeb.Config.client_registry()
-          opts = [skills: skills, max_iterations: 20, client_registry: client_registry]
-          res = :erpc.call(node, Beamlens.Coordinator, :run, [context, opts], 120_000)
-
-          :telemetry.execute(
-            [:beamlens_web, :dashboard, :trigger_analysis, :complete],
-            %{system_time: System.system_time()},
-            %{node: node, insight_count: length(Map.get(res, :insights, []))}
-          )
-
-          res
-        catch
-          :exit, reason ->
-            :telemetry.execute(
-              [:beamlens_web, :dashboard, :trigger_analysis, :error],
-              %{system_time: System.system_time()},
-              %{node: node, reason: reason}
-            )
-
-            {:error, reason}
-        end
-
-      send(liveview_pid, {:analysis_complete, result})
-    end)
-
-    {:noreply, socket}
-  end
-
-  def handle_event("clear_results", _params, socket) do
-    {:noreply, assign(socket, :analysis_result, nil)}
-  end
-
   @impl true
   def handle_info(:refresh, socket) do
     schedule_refresh()
@@ -595,21 +547,6 @@ defmodule BeamlensWeb.DashboardLive do
      socket
      |> assign(:analysis_result, result)
      |> assign(:summarization_task_pid, task_pid)}
-  end
-
-  def handle_info({:analysis_complete, {:ok, result}}, socket) do
-    coordinator_messages = build_coordinator_messages(result)
-
-    socket =
-      socket
-      |> assign(:analysis_running, false)
-      |> assign(:analysis_task_pid, nil)
-      |> assign(:analysis_result, result)
-      |> update(:messages, &(&1 ++ coordinator_messages))
-      |> put_flash(:info, "Analysis complete")
-      |> refresh_data()
-
-    {:noreply, socket}
   end
 
   def handle_info({:summary_complete, {:ok, summary}, result, updated_context}, socket) do
@@ -676,20 +613,6 @@ defmodule BeamlensWeb.DashboardLive do
       |> assign(:analysis_running, false)
       |> assign(:analysis_task_pid, nil)
       |> assign(:current_question, nil)
-      |> update(:messages, &(&1 ++ [error_message]))
-      |> put_flash(:error, error_text)
-
-    {:noreply, socket}
-  end
-
-  def handle_info({:analysis_complete, {:error, reason}}, socket) do
-    error_text = format_error_reason(reason)
-    error_message = ChatMessage.coordinator(error_text, message_type: :error)
-
-    socket =
-      socket
-      |> assign(:analysis_running, false)
-      |> assign(:analysis_task_pid, nil)
       |> update(:messages, &(&1 ++ [error_message]))
       |> put_flash(:error, error_text)
 
@@ -830,6 +753,7 @@ defmodule BeamlensWeb.DashboardLive do
         notification_count={@notification_counts.total}
         insight_count={length(@insights)}
         mobile_open={@sidebar_open}
+        chat_enabled={@chat_enabled}
       />
 
       <.settings_panel
@@ -1145,14 +1069,19 @@ defmodule BeamlensWeb.DashboardLive do
   defp type_to_string(nil), do: nil
   defp type_to_string(type) when is_atom(type), do: Atom.to_string(type)
 
-  defp parse_source_param(nil, _operators), do: :trigger
-  defp parse_source_param("all", _operators), do: :all
-  defp parse_source_param("trigger", _operators), do: :trigger
-  defp parse_source_param("notifications", _operators), do: :notifications
-  defp parse_source_param("insights", _operators), do: :insights
-  defp parse_source_param("coordinator", _operators), do: :coordinator
+  defp parse_source_param(nil, _operators, chat_enabled),
+    do: if(chat_enabled, do: :trigger, else: :all)
 
-  defp parse_source_param(source, operators) do
+  defp parse_source_param("all", _operators, _chat_enabled), do: :all
+
+  defp parse_source_param("trigger", _operators, chat_enabled),
+    do: if(chat_enabled, do: :trigger, else: :all)
+
+  defp parse_source_param("notifications", _operators, _chat_enabled), do: :notifications
+  defp parse_source_param("insights", _operators, _chat_enabled), do: :insights
+  defp parse_source_param("coordinator", _operators, _chat_enabled), do: :coordinator
+
+  defp parse_source_param(source, operators, _chat_enabled) do
     operator_names = Enum.map(operators, & &1.operator)
 
     try do

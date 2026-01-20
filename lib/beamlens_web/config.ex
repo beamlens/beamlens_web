@@ -31,4 +31,11 @@ defmodule BeamlensWeb.Config do
   def client_registry do
     :persistent_term.get({__MODULE__, :client_registry}, %{})
   end
+
+  @doc """
+  Returns true if chat/analysis features are enabled (client_registry is configured).
+  """
+  def chat_enabled? do
+    client_registry() != %{}
+  end
 end

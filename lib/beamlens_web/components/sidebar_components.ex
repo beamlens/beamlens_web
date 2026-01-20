@@ -17,6 +17,7 @@ defmodule BeamlensWeb.SidebarComponents do
   attr(:notification_count, :integer, default: 0)
   attr(:insight_count, :integer, default: 0)
   attr(:mobile_open, :boolean, default: false)
+  attr(:chat_enabled, :boolean, default: false)
 
   def source_sidebar(assigns) do
     ~H"""
@@ -47,42 +48,44 @@ defmodule BeamlensWeb.SidebarComponents do
       </div>
 
       <div class="p-4 space-y-6">
-        <%!-- Primary Action Section --%>
-        <div>
-          <h2 class="text-[10px] font-bold text-base-content/40 uppercase tracking-[0.15em] px-2 mb-3">
-            Actions
-          </h2>
-          <button
-            type="button"
-            phx-click="select_source"
-            phx-value-source="trigger"
-            class={[
-              "group relative w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer",
-              if(@selected_source == :trigger,
-                do: "bg-primary text-primary-content shadow-lg shadow-primary/25",
-                else: "bg-base-200/50 text-base-content/80 hover:bg-primary/10 hover:text-primary"
-              )
-            ]}
-          >
-            <span class={[
-              "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all duration-200",
-              if(@selected_source == :trigger,
-                do: "bg-primary-content/20",
-                else: "bg-primary/10 group-hover:bg-primary/20"
-              )
-            ]}>
-              <%= if @selected_source == :trigger do %>
-                <.icon name="hero-bolt" class="w-4 h-4 text-primary-content" />
-              <% else %>
-                <.icon name="hero-bolt" class="w-4 h-4 text-primary" />
+        <%!-- Primary Action Section (only shown when chat is enabled) --%>
+        <%= if @chat_enabled do %>
+          <div>
+            <h2 class="text-[10px] font-bold text-base-content/40 uppercase tracking-[0.15em] px-2 mb-3">
+              Actions
+            </h2>
+            <button
+              type="button"
+              phx-click="select_source"
+              phx-value-source="trigger"
+              class={[
+                "group relative w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer",
+                if(@selected_source == :trigger,
+                  do: "bg-primary text-primary-content shadow-lg shadow-primary/25",
+                  else: "bg-base-200/50 text-base-content/80 hover:bg-primary/10 hover:text-primary"
+                )
+              ]}
+            >
+              <span class={[
+                "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all duration-200",
+                if(@selected_source == :trigger,
+                  do: "bg-primary-content/20",
+                  else: "bg-primary/10 group-hover:bg-primary/20"
+                )
+              ]}>
+                <%= if @selected_source == :trigger do %>
+                  <.icon name="hero-bolt" class="w-4 h-4 text-primary-content" />
+                <% else %>
+                  <.icon name="hero-bolt" class="w-4 h-4 text-primary" />
+                <% end %>
+              </span>
+              <span class="flex-1 text-left">Trigger</span>
+              <%= if @analysis_running do %>
+                <span class="loading loading-spinner loading-xs"></span>
               <% end %>
-            </span>
-            <span class="flex-1 text-left">Trigger</span>
-            <%= if @analysis_running do %>
-              <span class="loading loading-spinner loading-xs"></span>
-            <% end %>
-          </button>
-        </div>
+            </button>
+          </div>
+        <% end %>
 
         <%!-- Event Filters Section --%>
         <div>
