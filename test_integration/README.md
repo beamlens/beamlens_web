@@ -21,11 +21,28 @@ Then follow the configuration steps in `MANUAL_SETUP.md`
 
 ## Running Tests
 
+### Local Development (Default)
+
+Test against the local path dependency:
+
 ```bash
 cd test_app
 mix deps.get
 mix test
 ```
+
+### Hex Release Testing
+
+Test against the published Hex package:
+
+```bash
+cd test_app
+rm -rf deps _build
+HEX_RELEASE=1 mix deps.get
+HEX_RELEASE=1 mix test
+```
+
+The `HEX_RELEASE=1` environment variable switches the dependency from the local path to the Hex release (`~> 0.1.0-beta.1`).
 
 ## Manual Testing
 

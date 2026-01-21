@@ -20,6 +20,13 @@ defmodule TestApp.MixProject do
   end
 
   defp deps do
+    beamlens_web_dep =
+      if System.get_env("HEX_RELEASE") do
+        {:beamlens_web, "~> 0.1.0-beta.1"}
+      else
+        {:beamlens_web, path: "../../"}
+      end
+
     [
       {:phoenix, "~> 1.7"},
       {:phoenix_live_view, "~> 1.0"},
@@ -28,7 +35,7 @@ defmodule TestApp.MixProject do
       {:bandit, "~> 1.0"},
       {:jason, "~> 1.4"},
       {:beamlens, "~> 0.2"},
-      {:beamlens_web, path: "../../"},
+      beamlens_web_dep,
       {:tidewave, "~> 0.5", only: :dev}
     ]
   end
