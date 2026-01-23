@@ -144,17 +144,6 @@ defmodule BeamlensWeb.SidebarComponents do
           <% end %>
         </div>
 
-        <%!-- Clear operator filter --%>
-        <%= if @selected_operator do %>
-          <button
-            type="button"
-            phx-click="clear_operator_filter"
-            class="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs text-base-content/60 hover:text-base-content hover:bg-base-200/50 transition-all cursor-pointer"
-          >
-            <.icon name="hero-x-mark" class="w-3 h-3" />
-            <span>Clear operator filter</span>
-          </button>
-        <% end %>
       </div>
     </aside>
     """
@@ -253,31 +242,41 @@ defmodule BeamlensWeb.SidebarComponents do
 
   defp operator_item(assigns) do
     ~H"""
-    <button
-      type="button"
-      phx-click="select_operator"
-      phx-value-operator={@operator.operator}
-      class={[
-        "group relative w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 cursor-pointer",
-        if(@selected,
-          do: "bg-primary/10 text-primary font-medium",
-          else: "text-base-content/60 hover:bg-base-200/50 hover:text-base-content"
-        )
-      ]}
-      title={@operator.title}
-    >
-      <%!-- Indentation spacer --%>
-      <div class="w-2"></div>
-
-      <span class="flex-1 text-left text-xs"><%= format_operator_name(@operator.operator) %></span>
-
-      <%!-- Status indicator - only show spinner when running --%>
-      <%= if @operator.running do %>
-        <span class="flex items-center gap-1.5 text-success">
-          <span class="loading loading-spinner loading-xs"></span>
-        </span>
+    <div class="flex items-center gap-1">
+      <%= if @selected do %>
+        <button
+          type="button"
+          phx-click="clear_operator_filter"
+          class="p-1 rounded hover:bg-base-300/50 text-base-content/50 hover:text-base-content transition-colors cursor-pointer"
+          title="Clear filter"
+        >
+          <.icon name="hero-x-mark" class="w-3 h-3" />
+        </button>
+      <% else %>
+        <div class="w-5"></div>
       <% end %>
-    </button>
+      <button
+        type="button"
+        phx-click="select_operator"
+        phx-value-operator={@operator.operator}
+        class={[
+          "group relative flex-1 flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 cursor-pointer",
+          if(@selected,
+            do: "bg-primary/10 text-primary font-medium",
+            else: "text-base-content/60 hover:bg-base-200/50 hover:text-base-content"
+          )
+        ]}
+        title={@operator.title}
+      >
+        <span class="flex-1 text-left text-xs"><%= format_operator_name(@operator.operator) %></span>
+
+        <%= if @operator.running do %>
+          <span class="flex items-center gap-1.5 text-success">
+            <span class="loading loading-spinner loading-xs"></span>
+          </span>
+        <% end %>
+      </button>
+    </div>
     """
   end
 
