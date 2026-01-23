@@ -18,6 +18,9 @@ defmodule BeamlensWeb.SidebarComponents do
   attr(:insight_count, :integer, default: 0)
   attr(:mobile_open, :boolean, default: false)
   attr(:chat_enabled, :boolean, default: false)
+  attr(:operators, :list, default: [])
+  attr(:coordinator_status, :map, default: %{running: false})
+  attr(:selected_operator, :atom, default: nil)
 
   def source_sidebar(assigns) do
     ~H"""
@@ -87,10 +90,10 @@ defmodule BeamlensWeb.SidebarComponents do
           </div>
         <% end %>
 
-        <%!-- Event Filters Section --%>
+        <%!-- Filters Section --%>
         <div>
           <h2 class="text-[10px] font-bold text-base-content/40 uppercase tracking-[0.15em] px-2 mb-3">
-            Event Filters
+            Filters
           </h2>
           <div class="space-y-1">
             <.sidebar_nav_item
@@ -113,36 +116,45 @@ defmodule BeamlensWeb.SidebarComponents do
               selected={@selected_source == :insights}
               count={@insight_count}
             />
-            <.sidebar_nav_item
+            <%!-- Coordinator --%>
+            <.process_item
+              name="Coordinator"
               icon="hero-cpu-chip"
-              label="Coordinator"
-              source="coordinator"
+              running={@coordinator_status.running || @analysis_running}
               selected={@selected_source == :coordinator}
+              click_event="select_source"
+              click_value="coordinator"
             />
           </div>
-        </div>
-
-        <%!-- Status Section --%>
-        <div>
-          <h2 class="text-[10px] font-bold text-base-content/40 uppercase tracking-[0.15em] px-2 mb-3">
-            Status
-          </h2>
-          <div class="px-3 py-3 rounded-xl bg-base-200/30">
-            <div class="flex items-center gap-3">
-              <%= if @analysis_running do %>
-                <span class="relative flex h-3 w-3">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-                </span>
-                <span class="text-sm font-medium text-primary">Analysis running...</span>
-              <% else %>
-                <span class="w-3 h-3 rounded-full bg-base-content/20"></span>
-                <span class="text-sm text-base-content/50">Idle</span>
-              <% end %>
+          <%!-- Operators subsection (grouped in a card) --%>
+          <%= if @operators != [] do %>
+            <div class="mt-3 rounded-lg border border-base-300/50 bg-base-200/30 p-2">
+              <div class="text-[10px] font-bold text-base-content/40 uppercase tracking-[0.15em] px-1 mb-2">
+                Operators
+              </div>
+              <div class="space-y-0.5">
+                <%= for operator <- @operators do %>
+                  <.operator_item
+                    operator={operator}
+                    selected={@selected_operator == operator.operator}
+                  />
+                <% end %>
+              </div>
             </div>
-          </div>
+          <% end %>
         </div>
 
+        <%!-- Clear operator filter --%>
+        <%= if @selected_operator do %>
+          <button
+            type="button"
+            phx-click="clear_operator_filter"
+            class="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs text-base-content/60 hover:text-base-content hover:bg-base-200/50 transition-all cursor-pointer"
+          >
+            <.icon name="hero-x-mark" class="w-3 h-3" />
+            <span>Clear operator filter</span>
+          </button>
+        <% end %>
       </div>
     </aside>
     """
@@ -191,4 +203,89 @@ defmodule BeamlensWeb.SidebarComponents do
     </button>
     """
   end
+
+  attr(:name, :string, required: true)
+  attr(:icon, :string, required: true)
+  attr(:running, :boolean, default: false)
+  attr(:selected, :boolean, default: false)
+  attr(:click_event, :string, required: true)
+  attr(:click_value, :string, required: true)
+
+  defp process_item(assigns) do
+    ~H"""
+    <button
+      type="button"
+      phx-click={@click_event}
+      phx-value-source={@click_value}
+      class={[
+        "group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 cursor-pointer",
+        if(@selected,
+          do: "bg-primary/10 text-primary font-medium",
+          else: "text-base-content/70 hover:bg-base-200/50 hover:text-base-content"
+        )
+      ]}
+    >
+      <%!-- Active indicator --%>
+      <div class={[
+        "absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full transition-all duration-200",
+        if(@selected, do: "bg-primary", else: "bg-transparent")
+      ]}></div>
+
+      <%= if @selected do %>
+        <.icon name={@icon} class="w-5 h-5 shrink-0 transition-colors text-primary" />
+      <% else %>
+        <.icon name={@icon} class="w-5 h-5 shrink-0 transition-colors text-base-content/50 group-hover:text-base-content/70" />
+      <% end %>
+      <span class="flex-1 text-left"><%= @name %></span>
+
+      <%!-- Status indicator - only show spinner when running --%>
+      <%= if @running do %>
+        <span class="flex items-center gap-1.5 text-success">
+          <span class="loading loading-spinner loading-xs"></span>
+        </span>
+      <% end %>
+    </button>
+    """
+  end
+
+  attr(:operator, :map, required: true)
+  attr(:selected, :boolean, default: false)
+
+  defp operator_item(assigns) do
+    ~H"""
+    <button
+      type="button"
+      phx-click="select_operator"
+      phx-value-operator={@operator.operator}
+      class={[
+        "group relative w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 cursor-pointer",
+        if(@selected,
+          do: "bg-primary/10 text-primary font-medium",
+          else: "text-base-content/60 hover:bg-base-200/50 hover:text-base-content"
+        )
+      ]}
+      title={@operator.title}
+    >
+      <%!-- Indentation spacer --%>
+      <div class="w-2"></div>
+
+      <span class="flex-1 text-left text-xs"><%= format_operator_name(@operator.operator) %></span>
+
+      <%!-- Status indicator - only show spinner when running --%>
+      <%= if @operator.running do %>
+        <span class="flex items-center gap-1.5 text-success">
+          <span class="loading loading-spinner loading-xs"></span>
+        </span>
+      <% end %>
+    </button>
+    """
+  end
+
+  defp format_operator_name(module) when is_atom(module) do
+    module
+    |> Module.split()
+    |> List.last()
+  end
+
+  defp format_operator_name(name), do: to_string(name)
 end

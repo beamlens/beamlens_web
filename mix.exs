@@ -50,7 +50,7 @@ defmodule BeamlensWeb.MixProject do
       {:bandit, "~> 1.0", only: :test},
       {:jason, "~> 1.4"},
       {:req, "~> 0.5"},
-      {:beamlens, github: "beamlens/beamlens", ref: "765c820"},
+      {:beamlens, github: "beamlens/beamlens", ref: "ac4aaa0"},
       {:mdex, "~> 0.11"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]

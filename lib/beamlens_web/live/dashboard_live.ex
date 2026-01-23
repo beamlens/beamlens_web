@@ -60,6 +60,7 @@ defmodule BeamlensWeb.DashboardLive do
      |> assign(:input_text, "")
      |> assign(:current_question, nil)
      |> assign(:chat_context, Puck.Context.new())
+     |> assign(:selected_operator, nil)
      |> refresh_data()}
   end
 
@@ -150,6 +151,40 @@ defmodule BeamlensWeb.DashboardLive do
 
   def handle_event("close_settings", _params, socket) do
     {:noreply, assign(socket, :settings_open, false)}
+  end
+
+  def handle_event("select_operator", %{"operator" => operator_str}, socket) do
+    operator = String.to_existing_atom(operator_str)
+    currently_selected = socket.assigns.selected_operator
+
+    if currently_selected == operator do
+      # Deselecting - just clear filter without navigating
+      socket =
+        socket
+        |> assign(:selected_operator, nil)
+        |> apply_filters()
+
+      {:noreply, socket}
+    else
+      # Selecting - switch to All Activity view
+      socket =
+        socket
+        |> assign(:selected_operator, operator)
+        |> assign(:selected_source, :all)
+        |> apply_filters()
+
+      {:noreply,
+       push_patch(socket,
+         to: build_url(socket.assigns.base_path, :all, socket.assigns.event_type_filter)
+       )}
+    end
+  end
+
+  def handle_event("clear_operator_filter", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:selected_operator, nil)
+     |> apply_filters()}
   end
 
   def handle_event("export_data", _params, socket) do
@@ -380,6 +415,22 @@ defmodule BeamlensWeb.DashboardLive do
     {:noreply, refresh_data(socket)}
   end
 
+  def handle_info({:telemetry_event, [:beamlens, :operator, :status_change], metadata}, socket) do
+    operator = metadata[:operator]
+    running = metadata[:running]
+
+    updated_operators =
+      Enum.map(socket.assigns.operators, fn op ->
+        if op.operator == operator do
+          %{op | running: running}
+        else
+          op
+        end
+      end)
+
+    {:noreply, assign(socket, :operators, updated_operators)}
+  end
+
   def handle_info({:telemetry_event, _event_name, _data}, socket) do
     {:noreply, refresh_data(socket)}
   end
@@ -569,7 +620,7 @@ defmodule BeamlensWeb.DashboardLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="flex flex-col h-screen overflow-hidden md:grid md:grid-cols-[260px_1fr] md:grid-rows-[auto_1fr]">
+    <div class="flex flex-col h-screen overflow-hidden md:grid md:grid-cols-[280px_1fr] md:grid-rows-[auto_1fr]">
       <header class="md:col-span-2 bg-base-100/95 backdrop-blur-lg border-b border-base-300/50 px-4 py-3 md:px-6 md:py-4 sticky top-0 z-30">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
@@ -630,6 +681,9 @@ defmodule BeamlensWeb.DashboardLive do
         insight_count={length(@insights)}
         mobile_open={@sidebar_open}
         chat_enabled={@chat_enabled}
+        operators={@operators}
+        coordinator_status={@coordinator_status}
+        selected_operator={@selected_operator}
       />
 
       <.settings_panel
@@ -639,7 +693,7 @@ defmodule BeamlensWeb.DashboardLive do
         last_updated={@last_updated}
       />
 
-      <main class="flex-1 overflow-hidden p-4 md:p-6 lg:p-8 bg-gradient-to-br from-base-100 to-base-200/30">
+      <main class="flex-1 min-w-0 overflow-auto p-4 md:p-6 lg:p-8 bg-gradient-to-br from-base-100 to-base-200/30">
         <.main_panel
           selected_source={@selected_source}
           operators={@operators}
@@ -982,11 +1036,13 @@ defmodule BeamlensWeb.DashboardLive do
     events = socket.assigns[:events] || []
     selected_source = socket.assigns[:selected_source]
     type_filter = socket.assigns[:event_type_filter]
+    selected_operator = socket.assigns[:selected_operator]
 
     filtered =
       events
       |> filter_by_source(selected_source)
       |> filter_by_type(type_filter)
+      |> filter_by_operator(selected_operator)
 
     assign(socket, :filtered_events, filtered)
   end
@@ -1010,6 +1066,9 @@ defmodule BeamlensWeb.DashboardLive do
 
   defp filter_by_type(events, nil), do: events
   defp filter_by_type(events, type), do: Enum.filter(events, &(&1.event_type == type))
+
+  defp filter_by_operator(events, nil), do: events
+  defp filter_by_operator(events, operator), do: Enum.filter(events, &(&1.source == operator))
 
   defp refresh_data(socket) do
     node = socket.assigns.selected_node
@@ -1083,8 +1142,11 @@ defmodule BeamlensWeb.DashboardLive do
     end
   end
 
-  defp fetch_coordinator_status(_node) do
-    %{running: false, notification_count: 0, unread_count: 0, iteration: 0}
+  defp fetch_coordinator_status(node) do
+    case rpc_call(node, Beamlens.Coordinator, :status, [Beamlens.Coordinator]) do
+      {:ok, status} -> Map.from_struct(status)
+      {:error, _reason} -> %{running: false, notification_count: 0, unread_count: 0, iteration: 0}
+    end
   end
 
   defp fetch_events(node) do
@@ -1192,6 +1254,7 @@ defmodule BeamlensWeb.DashboardLive do
 
     beamlens_events = [
       [:beamlens, :operator, :state_change],
+      [:beamlens, :operator, :status_change],
       [:beamlens, :operator, :notification_sent],
       [:beamlens, :coordinator, :insight_produced],
       [:beamlens, :coordinator, :notification_received]
@@ -1220,8 +1283,8 @@ defmodule BeamlensWeb.DashboardLive do
   end
 
   @doc false
-  def handle_beamlens_telemetry(event_name, _measurements, _metadata, %{pid: pid}) do
-    send(pid, {:telemetry_event, event_name, nil})
+  def handle_beamlens_telemetry(event_name, _measurements, metadata, %{pid: pid}) do
+    send(pid, {:telemetry_event, event_name, metadata})
   end
 
   @doc false
