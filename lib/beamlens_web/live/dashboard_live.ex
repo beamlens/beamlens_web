@@ -87,6 +87,7 @@ defmodule BeamlensWeb.DashboardLive do
     {:noreply,
      socket
      |> assign(:sidebar_open, false)
+     |> assign(:selected_operator, nil)
      |> push_patch(
        to: build_url(socket.assigns.base_path, source_atom, socket.assigns.event_type_filter)
      )}
