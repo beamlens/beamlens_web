@@ -11,6 +11,7 @@ A real-time dashboard for Beamlens.
 - Chat interface to manage Beamlens
 - Real-time event tracing
 - Coordinator and operator health monitoring
+- Filter events by operator with live status indicators
 - Cluster support
 - JSON export for analysis
 
@@ -21,7 +22,7 @@ Add `beamlens_web` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:beamlens_web, "~> 0.1.0-beta.1"}
+    {:beamlens_web, "~> 0.1.0-beta.2"}
   ]
 end
 ```

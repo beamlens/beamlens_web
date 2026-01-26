@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.1.0-beta.2] - 2025-01-25
+
 ### Added
 - Filter events by operator - click any operator in the sidebar to see only its events
 - Live status indicators for operators and coordinator showing when they're actively running
