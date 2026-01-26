@@ -41,15 +41,23 @@ defmodule BeamlensWeb.ChatComponents do
     <script :type={Phoenix.LiveView.ColocatedHook} name=".ChatScroll" runtime>
       {
         mounted() {
-          this.scrollToBottom()
-          this.observer = new MutationObserver(() => this.scrollToBottom())
-          this.observer.observe(this.el, { childList: true, subtree: true })
+          this.messageCount = this.getMessageCount()
+          const wasInitialized = this.el.dataset.chatInitialized === 'true'
+          if (!wasInitialized) {
+            this.el.dataset.chatInitialized = 'true'
+            this.scrollToBottom()
+          }
         },
         updated() {
-          this.scrollToBottom()
+          const newCount = this.getMessageCount()
+          if (newCount > this.messageCount) {
+            this.scrollToBottom()
+            this.messageCount = newCount
+          }
         },
-        destroyed() {
-          if (this.observer) this.observer.disconnect()
+        getMessageCount() {
+          const list = this.el.querySelector('#messages-list')
+          return list ? list.children.length : 0
         },
         scrollToBottom() {
           this.el.scrollTop = this.el.scrollHeight

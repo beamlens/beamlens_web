@@ -80,7 +80,12 @@ defmodule BeamlensWeb.SummarizerTest do
             skill: MyApp.Skills.Memory,
             state: :completed,
             notifications: [
-              %{severity: :warning, summary: "High memory detected"}
+              %{
+                severity: :warning,
+                observation: "High memory detected",
+                context: "Node running for 2 days",
+                hypothesis: "ETS table growth"
+              }
             ],
             snapshots: [
               %{data: %{heap_size: 1024, stack_size: 256}}
@@ -94,6 +99,8 @@ defmodule BeamlensWeb.SummarizerTest do
       assert String.contains?(output, "## Operator Results")
       assert String.contains?(output, "### Memory (completed)")
       assert String.contains?(output, "[warning] High memory detected")
+      assert String.contains?(output, "Context: Node running for 2 days")
+      assert String.contains?(output, "Hypothesis: ETS table growth")
       assert String.contains?(output, "heap_size:")
       refute String.contains?(output, "## Insights")
     end

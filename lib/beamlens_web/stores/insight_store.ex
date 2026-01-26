@@ -73,6 +73,8 @@ defmodule BeamlensWeb.InsightStore do
       notification_ids: insight.notification_ids,
       correlation_type: insight.correlation_type,
       summary: insight.summary,
+      matched_observations: insight.matched_observations,
+      hypothesis_grounded: insight.hypothesis_grounded,
       root_cause_hypothesis: insight.root_cause_hypothesis,
       confidence: insight.confidence,
       created_at: insight.created_at

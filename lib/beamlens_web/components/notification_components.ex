@@ -24,11 +24,30 @@ defmodule BeamlensWeb.NotificationComponents do
         <span class="flex-1"></span>
         <.copyable value={@notification.id} display={String.slice(@notification.id, 0..7) <> "..."} code={true} />
       </div>
-      <div class="p-4">
-        <p class="text-base mb-3">
-          <.copyable value={@notification.summary} code={false} class="text-base-content" />
-        </p>
-        <div class="flex flex-wrap gap-3 text-sm text-base-content/70">
+      <div class="p-4 space-y-3">
+        <div>
+          <span class="text-xs font-medium text-base-content/50 uppercase tracking-wide">Observation</span>
+          <p class="text-base">
+            <.copyable value={@notification.observation} code={false} class="text-base-content" />
+          </p>
+        </div>
+        <%= if @notification.context do %>
+          <div>
+            <span class="text-xs font-medium text-base-content/50 uppercase tracking-wide">Context</span>
+            <p class="text-sm text-base-content/70">
+              <.copyable value={@notification.context} code={false} class="text-base-content/70" />
+            </p>
+          </div>
+        <% end %>
+        <%= if @notification.hypothesis do %>
+          <div>
+            <span class="text-xs font-medium text-base-content/50 uppercase tracking-wide">Hypothesis</span>
+            <p class="text-sm text-base-content/70 italic">
+              <.copyable value={@notification.hypothesis} code={false} class="text-base-content/70" />
+            </p>
+          </div>
+        <% end %>
+        <div class="flex flex-wrap gap-3 text-sm text-base-content/70 pt-2 border-t border-base-300">
           <span>Type: <.copyable value={to_string(@notification.anomaly_type)} code={false} class="text-base-content/70" /></span>
           <span class="font-mono text-xs"><.timestamp value={@notification.detected_at} format={:datetime} /></span>
         </div>

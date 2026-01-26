@@ -189,8 +189,13 @@ defmodule BeamlensWeb.Summarizer do
                 notifications
                 |> Enum.map(fn n ->
                   severity = Map.get(n, :severity, :info)
-                  summary = Map.get(n, :summary, "")
-                  "  - [#{severity}] #{summary}"
+                  observation = Map.get(n, :observation, "")
+                  context = Map.get(n, :context)
+                  hypothesis = Map.get(n, :hypothesis)
+
+                  base = "  - [#{severity}] #{observation}"
+                  base = if context, do: base <> " (Context: #{context})", else: base
+                  if hypothesis, do: base <> "\n    Hypothesis: #{hypothesis}", else: base
                 end)
                 |> Enum.join("\n")
               else

@@ -694,7 +694,7 @@ defmodule BeamlensWeb.DashboardLive do
         last_updated={@last_updated}
       />
 
-      <main class="flex-1 min-w-0 overflow-auto p-4 md:p-6 lg:p-8 bg-gradient-to-br from-base-100 to-base-200/30">
+      <main class="flex-1 min-w-0 min-h-0 overflow-hidden p-4 md:p-6 lg:p-8 bg-gradient-to-br from-base-100 to-base-200/30">
         <.main_panel
           selected_source={@selected_source}
           operators={@operators}
@@ -1258,7 +1258,10 @@ defmodule BeamlensWeb.DashboardLive do
       [:beamlens, :operator, :status_change],
       [:beamlens, :operator, :notification_sent],
       [:beamlens, :coordinator, :insight_produced],
-      [:beamlens, :coordinator, :notification_received]
+      [:beamlens, :coordinator, :notification_received],
+      [:beamlens, :coordinator, :started],
+      [:beamlens, :coordinator, :done],
+      [:beamlens, :coordinator, :llm_error]
     ]
 
     :telemetry.attach_many(

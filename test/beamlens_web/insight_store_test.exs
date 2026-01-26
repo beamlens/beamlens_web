@@ -98,6 +98,8 @@ defmodule BeamlensWeb.InsightStoreTest do
       notification_ids: notification_ids || ["notif-1"],
       correlation_type: :temporal,
       summary: "Test insight",
+      matched_observations: ["observation 1", "observation 2"],
+      hypothesis_grounded: true,
       root_cause_hypothesis: "Test hypothesis",
       confidence: :high,
       created_at: created_at

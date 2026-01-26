@@ -239,9 +239,16 @@ defmodule BeamlensWeb.EventComponents do
   defp event_badge_class(:done), do: "badge-success"
   defp event_badge_class(_), do: "badge-neutral"
 
-  defp format_source(:coordinator), do: "coordinator"
-  defp format_source(:unknown), do: "unknown"
-  defp format_source(source) when is_atom(source), do: Atom.to_string(source)
+  defp format_source(:coordinator), do: "Coordinator"
+  defp format_source(:unknown), do: "Unknown"
+
+  defp format_source(source) when is_atom(source) do
+    case Module.split(source) do
+      [_single] -> Atom.to_string(source)
+      parts -> List.last(parts)
+    end
+  end
+
   defp format_source(source), do: to_string(source)
 
   defp format_event_details(event, expanded)
@@ -297,6 +304,17 @@ defmodule BeamlensWeb.EventComponents do
 
   defp format_event_details(%{event_type: :done, metadata: meta}, _expanded) do
     "Analysis complete" <> if(meta[:has_unread], do: " (has unread)", else: "")
+  end
+
+  defp format_event_details(%{event_type: :get_notifications, metadata: meta}, _expanded) do
+    count = meta[:count] || 0
+    status = meta[:status]
+
+    if status do
+      "Retrieved #{count} #{status} notification(s)"
+    else
+      "Retrieved #{count} notification(s)"
+    end
   end
 
   defp format_event_details(_event, _expanded) do

@@ -385,7 +385,7 @@ defmodule BeamlensWeb.CoreComponents do
 
       <.copyable value={@event.id} />
       <.copyable value={@event.trace_id} display={String.slice(@event.trace_id, 0..7) <> "..."} />
-      <.copyable value={@notification.summary} />
+      <.copyable value={@notification.observation} />
   """
   attr(:value, :string, required: true)
   attr(:display, :string, default: nil)
