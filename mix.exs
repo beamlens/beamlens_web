@@ -50,9 +50,10 @@ defmodule BeamlensWeb.MixProject do
       {:bandit, "~> 1.0", only: :test},
       {:jason, "~> 1.4"},
       {:req, "~> 0.5"},
-      {:beamlens, github: "beamlens/beamlens", ref: "b932f8a"},
+      {:beamlens, "~> 0.3.0"},
       {:mdex, "~> 0.11"},
-      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
+      {:igniter, "~> 0.6", only: [:dev, :test], runtime: false}
     ]
   end
 end

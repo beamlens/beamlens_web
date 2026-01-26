@@ -34,9 +34,10 @@ defmodule TestApp.MixProject do
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:bandit, "~> 1.0"},
       {:jason, "~> 1.4"},
-      {:beamlens, github: "beamlens/beamlens", ref: "b932f8a"},
+      {:beamlens, "~> 0.3.0", override: true},
       beamlens_web_dep,
-      {:tidewave, "~> 0.5", only: :dev}
+      {:tidewave, "~> 0.5", only: :dev},
+      {:igniter, "~> 0.5", only: [:dev, :test]}
     ]
   end
 end
