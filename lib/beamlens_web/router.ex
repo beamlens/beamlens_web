@@ -38,6 +38,12 @@ defmodule BeamlensWeb.Router do
     quote bind_quoted: binding() do
       import Phoenix.Router, only: [get: 4, forward: 3, scope: 3]
 
+      asset_prefix =
+        Phoenix.Router.scoped_path(__MODULE__, "/_beamlens_web")
+        |> String.replace_suffix("/", "")
+
+      Application.put_env(:beamlens_web, :asset_prefix, asset_prefix)
+
       get("/_beamlens_web/css-:md5", BeamlensWeb.Assets, :css, as: :beamlens_web_css)
 
       get("/_beamlens_web/phoenix-:md5", BeamlensWeb.Assets, :phoenix_js,

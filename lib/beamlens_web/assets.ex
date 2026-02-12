@@ -44,6 +44,14 @@ defmodule BeamlensWeb.Assets do
   defp contents_and_type(:app_js), do: {@app_js, "application/javascript"}
 
   @doc """
+  Returns the scoped asset prefix set by the `beamlens_web` router macro.
+  Falls back to `/_beamlens_web` if the macro hasn't run yet (e.g. in tests).
+  """
+  def prefix do
+    Application.get_env(:beamlens_web, :asset_prefix, "/_beamlens_web")
+  end
+
+  @doc """
   Returns the current hash for the given asset.
   """
   def current_hash(:css), do: @hashes.css
