@@ -12,6 +12,9 @@ defmodule BeamlensWeb.Layouts do
   Root layout for the dashboard - includes HTML structure and external CSS.
   """
   def root(assigns) do
+    assigns =
+      Phoenix.Component.assign(assigns, :asset_prefix, BeamlensWeb.Assets.prefix())
+
     ~H"""
     <!DOCTYPE html>
     <html lang="en" data-theme="beamlens-dark" data-theme-mode="system">
@@ -20,11 +23,11 @@ defmodule BeamlensWeb.Layouts do
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="csrf-token" content={Phoenix.Controller.get_csrf_token()} />
         <title>beamlens</title>
-        <link rel="icon" type="image/x-icon" href="_beamlens_web/favicon.ico" />
-        <link rel="icon" type="image/png" sizes="32x32" href="_beamlens_web/favicon-32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="_beamlens_web/favicon-16.png" />
-        <link rel="apple-touch-icon" href="_beamlens_web/images/logo/apple-touch-icon.png" />
-        <link rel="stylesheet" href={"_beamlens_web/css-#{BeamlensWeb.Assets.current_hash(:css)}"} />
+        <link rel="icon" type="image/x-icon" href={"#{@asset_prefix}/favicon.ico"} />
+        <link rel="icon" type="image/png" sizes="32x32" href={"#{@asset_prefix}/favicon-32.png"} />
+        <link rel="icon" type="image/png" sizes="16x16" href={"#{@asset_prefix}/favicon-16.png"} />
+        <link rel="apple-touch-icon" href={"#{@asset_prefix}/images/logo/apple-touch-icon.png"} />
+        <link rel="stylesheet" href={"#{@asset_prefix}/css-#{BeamlensWeb.Assets.current_hash(:css)}"} />
         <script>
           // Apply theme before first paint to prevent flash
           (function() {
@@ -37,9 +40,9 @@ defmodule BeamlensWeb.Layouts do
             document.documentElement.setAttribute('data-theme-mode', stored || 'system');
           })();
         </script>
-        <script defer src={"_beamlens_web/phoenix-#{BeamlensWeb.Assets.current_hash(:phoenix_js)}"}></script>
-        <script defer src={"_beamlens_web/live_view-#{BeamlensWeb.Assets.current_hash(:live_view_js)}"}></script>
-        <script defer src={"_beamlens_web/app-#{BeamlensWeb.Assets.current_hash(:app_js)}"}></script>
+        <script defer src={"#{@asset_prefix}/phoenix-#{BeamlensWeb.Assets.current_hash(:phoenix_js)}"}></script>
+        <script defer src={"#{@asset_prefix}/live_view-#{BeamlensWeb.Assets.current_hash(:live_view_js)}"}></script>
+        <script defer src={"#{@asset_prefix}/app-#{BeamlensWeb.Assets.current_hash(:app_js)}"}></script>
         <style>
           /* Copyable field styles */
           .copyable-field { cursor: text; }
