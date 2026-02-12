@@ -22,7 +22,7 @@ defmodule BeamlensWeb.Layouts do
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="csrf-token" content={Phoenix.Controller.get_csrf_token()} />
-        <title>beamlens</title>
+        <title>Beamlens</title>
         <link rel="icon" type="image/x-icon" href={"#{@asset_prefix}/favicon.ico"} />
         <link rel="icon" type="image/png" sizes="32x32" href={"#{@asset_prefix}/favicon-32.png"} />
         <link rel="icon" type="image/png" sizes="16x16" href={"#{@asset_prefix}/favicon-16.png"} />

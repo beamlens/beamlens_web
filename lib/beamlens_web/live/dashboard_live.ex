@@ -41,6 +41,7 @@ defmodule BeamlensWeb.DashboardLive do
 
     {:ok,
      socket
+     |> assign(:asset_prefix, BeamlensWeb.Assets.prefix())
      |> assign(:chat_enabled, chat_enabled)
      |> assign(:selected_source, default_source)
      |> assign(:event_type_filter, nil)
@@ -634,8 +635,8 @@ defmodule BeamlensWeb.DashboardLive do
               <.icon name="hero-bars-3" class="w-5 h-5" />
             </button>
             <a href={@base_path} class="flex items-center gap-2.5 group">
-              <img src="/images/logo/icon-blue.png" alt="beamlens" width="32" height="32" class="w-8 h-8 shrink-0 object-contain transition-transform group-hover:scale-105" />
-              <h1 class="text-lg md:text-xl font-bold text-base-content">beamlens</h1>
+              <img src={"#{@asset_prefix}/images/logo/icon-blue.png"} alt="Beamlens" width="32" height="32" class="w-8 h-8 shrink-0 object-contain transition-transform group-hover:scale-105" />
+              <h1 class="text-lg md:text-xl font-bold text-base-content">Beamlens</h1>
             </a>
           </div>
           <%!-- Desktop header controls --%>
