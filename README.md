@@ -22,7 +22,7 @@ Add `beamlens_web` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:beamlens_web, "~> 0.1.0-beta.2"}
+    {:beamlens_web, "~> 0.1.0-beta.3"}
   ]
 end
 ```

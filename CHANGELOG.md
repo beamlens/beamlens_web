@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.1.0-beta.3] - 2026-02-12
+
+### Fixed
+- Asset and favicon paths in the dashboard root layout now resolve correctly when mounted under a scoped router path (for example, `/dev/beamlens`)
+
 ## [0.1.0-beta.2] - 2025-01-25
 
 ### Added
