@@ -12,12 +12,18 @@ defmodule BeamlensWeb.Layouts do
   Root layout for the dashboard - includes HTML structure and external CSS.
   """
   def root(assigns) do
+    theme_default = BeamlensWeb.Config.theme_default()
+
     assigns =
-      Phoenix.Component.assign(assigns, :asset_prefix, BeamlensWeb.Assets.prefix())
+      assigns
+      |> Phoenix.Component.assign(:asset_prefix, BeamlensWeb.Assets.prefix())
+      |> Phoenix.Component.assign(:theme_default, theme_default)
+      |> Phoenix.Component.assign(:initial_theme, initial_theme(theme_default))
+      |> Phoenix.Component.assign(:theme_override_css, BeamlensWeb.Config.theme_override_css())
 
     ~H"""
     <!DOCTYPE html>
-    <html lang="en" data-theme="beamlens-dark" data-theme-mode="system">
+    <html lang="en" data-theme={@initial_theme} data-theme-mode={@theme_default}>
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -28,16 +34,21 @@ defmodule BeamlensWeb.Layouts do
         <link rel="icon" type="image/png" sizes="16x16" href={"#{@asset_prefix}/favicon-16.png"} />
         <link rel="apple-touch-icon" href={"#{@asset_prefix}/images/logo/apple-touch-icon.png"} />
         <link rel="stylesheet" href={"#{@asset_prefix}/css-#{BeamlensWeb.Assets.current_hash(:css)}"} />
+        <style :if={@theme_override_css != ""} data-beamlens-theme-overrides>
+          <%= Phoenix.HTML.raw(@theme_override_css) %>
+        </style>
         <script>
           // Apply theme before first paint to prevent flash
           (function() {
+            const configured = "<%= @theme_default %>";
             const stored = localStorage.getItem('beamlens-theme');
+            const mode = stored || configured;
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const theme = stored === 'light' ? 'beamlens-light' :
-                          stored === 'dark' ? 'beamlens-dark' :
+            const theme = mode === 'light' ? 'beamlens-light' :
+                          mode === 'dark' ? 'beamlens-dark' :
                           (prefersDark ? 'beamlens-dark' : 'beamlens-light');
             document.documentElement.setAttribute('data-theme', theme);
-            document.documentElement.setAttribute('data-theme-mode', stored || 'system');
+            document.documentElement.setAttribute('data-theme-mode', mode);
           })();
         </script>
         <script defer src={"#{@asset_prefix}/phoenix-#{BeamlensWeb.Assets.current_hash(:phoenix_js)}"}></script>
@@ -51,7 +62,7 @@ defmodule BeamlensWeb.Layouts do
           /* Copy button styles */
           .copy-record-btn { cursor: pointer; }
           .copy-record-btn .hidden { display: none !important; }
-          .copy-record-btn .check-icon { color: #22c55e; }
+          .copy-record-btn .check-icon { color: var(--color-success); }
         </style>
         <script>
           // Theme switching functions
@@ -67,8 +78,7 @@ defmodule BeamlensWeb.Layouts do
 
           // Listen for system theme changes
           window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-            const stored = localStorage.getItem('beamlens-theme');
-            if (!stored || stored === 'system') {
+            if (document.documentElement.getAttribute('data-theme-mode') === 'system') {
               document.documentElement.setAttribute('data-theme',
                 e.matches ? 'beamlens-dark' : 'beamlens-light');
             }
@@ -130,7 +140,7 @@ defmodule BeamlensWeb.Layouts do
             const container = document.getElementById('tooltip-container') || document.body;
             const tooltip = document.createElement("div");
             tooltip.textContent = "Copied!";
-            tooltip.style.cssText = "position:fixed;z-index:99999;padding:4px 8px;font-size:12px;font-weight:500;color:#fff;background:#22c55e;border-radius:4px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);pointer-events:none;";
+            tooltip.style.cssText = "position:fixed;z-index:99999;padding:4px 8px;font-size:12px;font-weight:500;color:var(--color-success-content, #fff);background:var(--color-success);border-radius:4px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);pointer-events:none;";
             container.appendChild(tooltip);
 
             // Position tooltip above element
@@ -168,6 +178,10 @@ defmodule BeamlensWeb.Layouts do
     </html>
     """
   end
+
+  defp initial_theme(:light), do: "beamlens-light"
+  defp initial_theme(:dark), do: "beamlens-dark"
+  defp initial_theme(:system), do: "beamlens-dark"
 
   @doc """
   Dashboard layout wrapper.

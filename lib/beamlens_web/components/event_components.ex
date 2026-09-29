@@ -77,7 +77,7 @@ defmodule BeamlensWeb.EventComponents do
         </span>
         <%= if @event.trace_id do %>
           <span class="font-mono text-xs text-base-content/50 shrink-0 hidden lg:inline" title={"Trace: #{@event.trace_id}"}>
-            <%= String.slice(@event.trace_id || "", 0..7) %>
+            <%= String.slice(@event.trace_id, 0..7) %>
           </span>
         <% end %>
         <span class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">

@@ -69,6 +69,22 @@ children = [
 
 When `client_registry` is not configured, the chat interface displays raw analysis data instead of AI summaries. See the [Beamlens provider docs](https://hexdocs.pm/beamlens/providers.html) for more configuration examples.
 
+### Theme configuration
+
+Set the default mode and override theme variables in your application config:
+
+```elixir
+config :beamlens_web, :theme,
+  default: :light,
+  light: %{"--color-primary" => "#3e64ff"},
+  dark: %{"--color-primary" => "#8098ff"}
+```
+
+The default mode accepts `:light`, `:dark`, or `:system` (the default). A user's
+saved theme choice takes precedence. The optional `:css` string appends custom
+CSS after the variable overrides. These values are rendered directly as CSS;
+only supply trusted application configuration.
+
 ## Telemetry Events
 
 BeamlensWeb emits telemetry events for observability:
